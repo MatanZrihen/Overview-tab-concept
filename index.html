@@ -1,0 +1,3152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coralogix Explore V2 Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; }
+  #root { width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+<script type="text/babel" data-type="module">
+const { useState, useMemo, useCallback, useRef, createContext, useContext } = React;
+const { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } = Recharts;
+
+function ChevronDown({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m6 9 6 6 6-6" /></svg>;
+}
+function ChevronUp({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m18 15-6-6-6 6" /></svg>;
+}
+function ChevronRight({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m9 18 6-6-6-6" /></svg>;
+}
+function Maximize2({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>;
+}
+function Search({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>;
+}
+function RotateCw({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>;
+}
+function MoreHorizontal({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>;
+}
+function Play({ size = 24, color = "currentColor", fill = "none", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><polygon points="6 3 20 12 6 21 6 3" /></svg>;
+}
+function Filter({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
+}
+function X({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>;
+}
+function Plus({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M5 12h14" /><path d="M12 5v14" /></svg>;
+}
+function Download({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
+}
+function SlidersHorizontal({ size = 24, color = "currentColor", style = {}, ...props }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><line x1="21" y1="4" x2="14" y2="4" /><line x1="10" y1="4" x2="3" y2="4" /><line x1="21" y1="12" x2="12" y2="12" /><line x1="8" y1="12" x2="3" y2="12" /><line x1="21" y1="20" x2="16" y2="20" /><line x1="12" y1="20" x2="3" y2="20" /><line x1="14" y1="2" x2="14" y2="6" /><line x1="8" y1="10" x2="8" y2="14" /><line x1="16" y1="18" x2="16" y2="22" /></svg>;
+}
+
+
+const T = {
+  bg: "#09090b",
+  card: "#18181b",
+  border: "#323234",
+  fg: "#e1e4ea",
+  fgMuted: "#74747c",
+  primary: "#2aa968",
+  primaryBg: "rgba(42,169,104,0.10)",
+  muted: "#323234",
+  font: "'Nunito Sans', sans-serif",
+  mono: "'Inconsolata', monospace",
+  radius: 6,
+  textP: 12,
+  textLabel: 11,
+  textH3: 16,
+};
+
+const GROUP_BY_OPTIONS = ["serviceName", "level", "subsystem"];
+const AGGREGATION_OPTIONS = ["Count", "Count Distinct", "Sum", "Min", "Max"];
+
+const SERVICE_NAME_ROWS = [
+  { rank: 1, label: "cll-lambda-python", value: 12976, color: "#5a8cf8" },
+  { rank: 2, label: "currencyservice", value: 5041893, color: "#ef4d7b" },
+  { rank: 3, label: "OverloadSpecificTableFunction-faas", value: 17339, color: "#9949db" },
+  { rank: 4, label: "cll-lambda-nodejs-2", value: 3618, color: "#216def" },
+  { rank: 5, label: "cartservice", value: 2685774, color: "#f97316" },
+  { rank: 6, label: "ContinuousDataFlowFunction-faas", value: 10170, color: "#22c4a0" },
+  { rank: 7, label: "NotifyProcessingAndTriggerWorkflow-faas", value: 4524, color: "#9949db" },
+  { rank: 8, label: "shippingservice", value: 379056, color: "#fb923c" },
+  { rank: 9, label: "DownloadInvoiceFromS3AndVerifyCustomer-faasavion", value: 222999, color: "#3cc48f" },
+  { rank: 10, label: "adservice", value: 824331, color: "#216def" },
+  { rank: 11, label: "DownloadInvoiceFromS3AndVerifyCustomer-faas", value: 11259, color: "#3cc48f" },
+  { rank: 12, label: "FetchCustomerHistoryFromRDS-faas", value: 4872, color: "#ef4d7b" },
+  { rank: 13, label: "paymentservice", value: 72312, color: "#5a8cf8" },
+  { rank: 14, label: "MalfunctioningDatabaseFunction-faas", value: 2943, color: "#9949db" },
+  { rank: 15, label: "emailservice", value: 62376, color: "#3cc48f" },
+  { rank: 16, label: "demo", value: 160, color: "#3cc48f" },
+  { rank: 17, label: "docs", value: 35073, color: "#f97316" },
+  { rank: 18, label: "cll-lambda-nodejs", value: 37457, color: "#f97316" },
+];
+
+const LEVEL_ROWS = [
+  { rank: 1, label: "INFO", value: 8234567, color: "#216def" },
+  { rank: 2, label: "DEBUG", value: 2341890, color: "#6b7280" },
+  { rank: 3, label: "WARN", value: 128456, color: "#f59e0b" },
+  { rank: 4, label: "ERROR", value: 45231, color: "#ef4444" },
+  { rank: 5, label: "TRACE", value: 12089, color: "#a78bfa" },
+  { rank: 6, label: "CRITICAL", value: 891, color: "#dc2626" },
+];
+
+const SUBSYSTEM_ROWS = [
+  { rank: 1, label: "api-gateway", value: 3421088, color: "#216def" },
+  { rank: 2, label: "database", value: 2134567, color: "#9949db" },
+  { rank: 3, label: "auth", value: 1234567, color: "#3cc48f" },
+  { rank: 4, label: "cache", value: 567890, color: "#f97316" },
+  { rank: 5, label: "messaging", value: 345612, color: "#ef4d7b" },
+  { rank: 6, label: "scheduler", value: 123456, color: "#fec52d" },
+  { rank: 7, label: "file-storage", value: 89012, color: "#22c4a0" },
+  { rank: 8, label: "notifications", value: 45678, color: "#5a8cf8" },
+];
+
+const MOCK_GROUP_BY_VALUES = {
+  serviceName: [
+    "checkoutservice", "recommendationservice", "paymentservice",
+    "checkoutservice", "recommendationservice", "paymentservice",
+    "checkoutservice", "recommendationservice", "paymentservice",
+    "checkoutservice", "recommendationservice", "paymentservice",
+    "checkoutservice", "recommendationservice", "paymentservice",
+    "checkoutservice", "recommendationservice", "paymentservice",
+    "checkoutservice", "recommendationservice",
+  ],
+  level: [
+    "INFO", "ERROR", "WARN", "INFO", "DEBUG",
+    "ERROR", "INFO", "WARN", "INFO", "ERROR",
+    "DEBUG", "ERROR", "INFO", "ERROR", "WARN",
+    "INFO", "ERROR", "DEBUG", "INFO", "WARN",
+  ],
+  subsystem: [
+    "api-gateway", "database", "auth", "cache", "messaging",
+    "api-gateway", "database", "auth", "cache", "scheduler",
+    "api-gateway", "database", "auth", "cache", "messaging",
+    "api-gateway", "database", "auth", "cache", "scheduler",
+  ],
+};
+
+const LEVEL_COLORS = {
+  INFO:     { bg: "rgba(29,78,216,0.15)", fg: "#60a5fa" },
+  DEBUG:    { bg: "rgba(107,114,128,0.15)", fg: "#9ca3af" },
+  WARN:     { bg: "rgba(245,158,11,0.15)", fg: "#fbbf24" },
+  ERROR:    { bg: "rgba(239,68,68,0.15)", fg: "#f87171" },
+  TRACE:    { bg: "rgba(139,92,246,0.15)", fg: "#a78bfa" },
+  CRITICAL: { bg: "rgba(220,38,38,0.15)", fg: "#f87171" },
+};
+
+function getTableData(groupBy, aggregation) {
+  const base = groupBy === "serviceName" ? SERVICE_NAME_ROWS : groupBy === "level" ? LEVEL_ROWS : SUBSYSTEM_ROWS;
+  if (aggregation === "Count") return base;
+  if (aggregation === "Count Distinct") return base.map(r => ({ ...r, value: Math.round(r.value * 0.4 + r.rank * 17) }));
+  if (aggregation === "Sum") return base.map(r => ({ ...r, value: Math.round(r.value * (1100 + (r.rank * 137) % 900)) }));
+  if (aggregation === "Min") return base.map(r => ({ ...r, value: Math.max(1, Math.round(r.value * 0.01 + r.rank * 3)) }));
+  if (aggregation === "Max") return base.map(r => ({ ...r, value: Math.round(r.value * 2.3 + r.rank * 1000) }));
+  return base;
+}
+
+const MULTI_GB_LABELS = {
+  serviceName: ["checkoutservice", "currencyservice", "cartservice", "paymentservice", "adservice", "shippingservice", "emailservice", "recommendationservice"],
+  level: ["INFO", "ERROR", "WARN", "DEBUG", "TRACE", "CRITICAL"],
+  subsystem: ["api-gateway", "database", "auth", "cache", "messaging", "scheduler"],
+};
+const MULTI_GB_COLORS = ["#5a8cf8", "#ef4d7b", "#f97316", "#216def", "#9949db", "#22c4a0", "#3cc48f", "#fb923c", "#fec52d", "#a78bfa", "#dc2626", "#6b7280"];
+
+function getMultiGroupTableData(groupBys, aggregation) {
+  if (groupBys.length <= 1) {
+    const primary = groupBys[0] ?? "serviceName";
+    return getTableData(primary, aggregation).map(r => ({ ...r, fields: { [primary]: r.label } }));
+  }
+  const primary = groupBys[0];
+  const primaryLabels = MULTI_GB_LABELS[primary] ?? MULTI_GB_LABELS.serviceName;
+  const secondaryFields = groupBys.slice(1);
+  const rows = [];
+  const rand = makeRand(42);
+  let rank = 0;
+  for (let pi = 0; pi < primaryLabels.length && rows.length < 24; pi++) {
+    const combosPerPrimary = Math.min(3, secondaryFields.reduce((n, f) => n * (MULTI_GB_LABELS[f]?.length ?? 3), 1));
+    for (let ci = 0; ci < combosPerPrimary && rows.length < 24; ci++) {
+      rank++;
+      const fields = { [primary]: primaryLabels[pi] };
+      secondaryFields.forEach((f, fi) => {
+        const opts = MULTI_GB_LABELS[f] ?? ["unknown"];
+        fields[f] = opts[(pi + ci + fi * 3) % opts.length];
+      });
+      const baseVal = Math.round(500000 * rand() + 1000);
+      let value = baseVal;
+      if (aggregation === "Sum") value = Math.round(baseVal * (1100 + (rank * 137) % 900));
+      else if (aggregation === "Count Distinct") value = Math.round(baseVal * 0.4 + rank * 17);
+      else if (aggregation === "Min") value = Math.max(1, Math.round(baseVal * 0.01 + rank * 3));
+      else if (aggregation === "Max") value = Math.round(baseVal * 2.3 + rank * 1000);
+      rows.push({
+        rank,
+        label: Object.values(fields).join(" . "),
+        value,
+        color: MULTI_GB_COLORS[(pi + ci) % MULTI_GB_COLORS.length],
+        fields,
+      });
+    }
+  }
+  return rows;
+}
+
+function getChartSeries(groupBys, aggregation) {
+  const rows = getMultiGroupTableData(groupBys, aggregation);
+  return [...rows].sort((a, b) => b.value - a.value).slice(0, 6).map((r, i) => ({ key: `s${i}`, label: r.label, color: r.color, total: r.value }));
+}
+
+function makeRand(seed) { let s = seed; return () => { s = ((s * 1103515245) + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+
+function buildChartBuckets(series) {
+  const rand = makeRand(271828);
+  const maxTotal = Math.max(...series.map(s => s.total), 1);
+  return Array.from({ length: 48 }, (_, i) => {
+    const totalMins = i * 30;
+    const hour = (16 + Math.floor(totalMins / 60)) % 24;
+    const min = totalMins % 60;
+    const label = min === 0 ? `${String(hour).padStart(2, "0")}:00` : "";
+    const t = i / 47;
+    const shape = 0.45 + 0.55 * Math.sin(t * Math.PI * 2.1 + 0.5) + 0.1 * Math.sin(t * Math.PI * 8.0);
+    const bucket = { index: i, label };
+    series.forEach(s => {
+      bucket[s.key] = Math.max(1, Math.round((s.total / maxTotal) * 900000 * shape * (0.88 + rand() * 0.24)));
+    });
+    return bucket;
+  });
+}
+
+const QueryCtx = createContext(null);
+
+function QueryDataProvider({ children, initialDataType = "Spans", onSwitchDataType, isEmpty = false, initialGroupBys, initialAggs, initialFilters, onRun, initialFocusTab }) {
+  const [groupBys, setGroupBys] = useState(isEmpty ? [] : (initialGroupBys ?? ["serviceName"]));
+  const [aggregations, setAggregations] = useState(isEmpty ? [] : (initialAggs ?? ["Count"]));
+  const [dataType, setDataType] = useState(initialDataType || null);
+
+  const groupBy = groupBys[0] ?? "serviceName";
+  const aggregation = aggregations[0] ?? "Count";
+
+  const setGroupBy = (v) => setGroupBys(prev => [v, ...prev.filter(g => g !== v).slice(0, prev.length - 1)]);
+  const addGroupBy = (v) => setGroupBys(prev => prev.includes(v) ? prev : [...prev, v]);
+  const removeGroupBy = (v) => setGroupBys(prev => prev.filter(g => g !== v));
+
+  const setAggregation = (v) => setAggregations(prev => [v, ...prev.slice(1)]);
+  const addAggregation = (v) => setAggregations(prev => prev.includes(v) ? prev : [...prev, v]);
+  const removeAggregation = (v) => setAggregations(prev => prev.filter(a => a !== v));
+  const ensureMinAggregation = useCallback(() => {
+    setAggregations(prev => prev.length === 0 ? ["Count"] : prev);
+  }, []);
+
+  const chartsData = useMemo(() => aggregations.map(agg => {
+    const series = getChartSeries(groupBys, agg);
+    const buckets = buildChartBuckets(series);
+    return { aggregation: agg, series, buckets };
+  }), [groupBys, aggregations]);
+
+  const tableData = useMemo(() => getMultiGroupTableData(groupBys, aggregation), [groupBys, aggregation]);
+
+  const multiAggTableData = useMemo(() => {
+    if (aggregations.length <= 1) return tableData;
+    return tableData.map(row => {
+      const aggValues = {};
+      aggregations.forEach(agg => {
+        const multipliers = { Count: 1, "Count Distinct": 0.4, Sum: 1200, Min: 0.01, Max: 2.3 };
+        aggValues[agg] = Math.round(row.value * (multipliers[agg] ?? 1) + row.rank * ((agg.length * 7) % 50));
+      });
+      return { ...row, aggValues };
+    });
+  }, [tableData, aggregations]);
+
+  const chartSeries = chartsData[0]?.series ?? [];
+  const chartBuckets = chartsData[0]?.buckets ?? [];
+
+  const [hoveredLabel, setHoveredLabel] = useState(null);
+  const [queryText, setQueryText] = useState("");
+  const [queryFilters, setQueryFilters] = useState(() =>
+    (initialFilters ?? []).map((f, i) => ({ ...f, id: Date.now() + i }))
+  );
+
+  const addFilter = useCallback((value, type) => {
+    setQueryFilters(prev => {
+      const exists = prev.find(f => f.value === String(value) && f.type === type);
+      if (exists) return prev;
+      return [...prev, { value: String(value), type, id: Date.now() }];
+    });
+  }, []);
+  const removeFilter = useCallback((id) => {
+    setQueryFilters(prev => prev.filter(f => f.id !== id));
+  }, []);
+
+  return (
+    <QueryCtx.Provider value={{
+      groupBys, groupBy, setGroupBy, addGroupBy, removeGroupBy,
+      aggregation, aggregations, setAggregation, addAggregation, removeAggregation, ensureMinAggregation,
+      tableData: multiAggTableData, chartSeries, chartBuckets, chartsData,
+      hoveredLabel, setHoveredLabel,
+      dataType, setDataType, onSwitchDataType, onRun,
+      queryText, setQueryText, queryFilters, addFilter, removeFilter, initialFocusTab,
+    }}>
+      {children}
+    </QueryCtx.Provider>
+  );
+}
+
+function useQuery() { return useContext(QueryCtx); }
+
+function fmtNum(n) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return String(n);
+}
+
+function fmtValue(n) { return n.toLocaleString(); }
+
+function SideNav() {
+  const icons = [
+    <svg key="logo" width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#2aa968" strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke="#2aa968" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    <Search size={16} />, <BarChartIcon />, <LayersIcon />, <BellIcon />,
+  ];
+  return (
+    <div style={{ width: 48, minWidth: 48, height: "100%", backgroundColor: T.bg, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 12, gap: 8 }}>
+      {icons.map((ic, i) => (
+        <div key={i} style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: T.radius, cursor: "pointer", color: i === 2 ? T.primary : T.fgMuted, backgroundColor: i === 2 ? T.primaryBg : "transparent" }}>
+          {ic}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BarChartIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="8" width="3" height="7" rx="1" fill="currentColor"/><rect x="6.5" y="4" width="3" height="11" rx="1" fill="currentColor"/><rect x="12" y="1" width="3" height="14" rx="1" fill="currentColor"/></svg>; }
+function LayersIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L1 5l7 4 7-4-7-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M1 8l7 4 7-4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M1 11l7 4 7-4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>; }
+function BellIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 5.5A4 4 0 004 5.5v3.17l-.83 2.5a.5.5 0 00.47.68h8.72a.5.5 0 00.47-.68L12 8.67V5.5z" stroke="currentColor" strokeWidth="1.5"/><path d="M6.5 12.5a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.5"/></svg>; }
+
+function QueryBuilder() {
+  const { groupBys, groupBy, setGroupBy, addGroupBy, removeGroupBy, aggregations, setAggregation, addAggregation, removeAggregation, ensureMinAggregation, dataType, setDataType, onSwitchDataType, onRun, queryText, setQueryText, queryFilters, removeFilter } = useQuery();
+
+  const [dataTypeOpen, setDataTypeOpen] = useState(false);
+  const [acOpen, setAcOpen] = useState(false);
+  const [acIndex, setAcIndex] = useState(0);
+  const inputRef = useRef(null);
+
+  const AC_SUGGESTIONS = useMemo(() => {
+    const common = [
+      { label: "serviceName", type: "field", desc: "Service name" },
+      { label: "operationName", type: "field", desc: "Operation / endpoint" },
+      { label: "status_code", type: "field", desc: "HTTP status code" },
+      { label: "duration", type: "field", desc: "Span duration (ms)" },
+      { label: "level", type: "field", desc: "Log severity level" },
+      { label: "subsystem", type: "field", desc: "Application subsystem" },
+      { label: "region", type: "field", desc: "Deployment region" },
+      { label: "= 'checkoutservice'", type: "value", desc: "Filter by service" },
+      { label: "= 'frontend'", type: "value", desc: "Filter by service" },
+      { label: "= 'paymentservice'", type: "value", desc: "Filter by service" },
+      { label: "> 500", type: "operator", desc: "Greater than 500" },
+      { label: "= 200", type: "operator", desc: "Status OK" },
+      { label: "= 500", type: "operator", desc: "Status Error" },
+      { label: "!= 'debug'", type: "operator", desc: "Exclude debug" },
+      { label: "AND", type: "keyword", desc: "Logical AND" },
+      { label: "OR", type: "keyword", desc: "Logical OR" },
+      { label: "NOT", type: "keyword", desc: "Logical NOT" },
+      { label: "CONTAINS", type: "keyword", desc: "String contains" },
+      { label: "IN", type: "keyword", desc: "Value in set" },
+    ];
+    if (!queryText.trim()) return [];
+    const q = queryText.toLowerCase().split(/\s+/).pop() || "";
+    if (!q) return [];
+    return common.filter(s => s.label.toLowerCase().includes(q)).slice(0, 7);
+  }, [queryText]);
+
+  const applyAc = (suggestion) => {
+    const words = queryText.split(/\s+/);
+    words.pop();
+    words.push(suggestion.label);
+    setQueryText(words.join(" ") + " ");
+    setAcOpen(false);
+    setAcIndex(0);
+    inputRef.current?.focus();
+  };
+  const cycleGroupBy = () => {
+    const idx = GROUP_BY_OPTIONS.indexOf(groupBy);
+    setGroupBy(GROUP_BY_OPTIONS[(idx + 1) % GROUP_BY_OPTIONS.length]);
+  };
+  const handleAddGroupBy = () => {
+    const next = GROUP_BY_OPTIONS.find(o => !groupBys.includes(o));
+    if (next) addGroupBy(next);
+  };
+  const canAddMore = groupBys.length < GROUP_BY_OPTIONS.length;
+  const cyclePrimaryAgg = () => {
+    const idx = AGGREGATION_OPTIONS.indexOf(aggregations[0]);
+    setAggregation(AGGREGATION_OPTIONS[(idx + 1) % AGGREGATION_OPTIONS.length]);
+  };
+  const handleAddAgg = () => {
+    const next = AGGREGATION_OPTIONS.find(o => !aggregations.includes(o));
+    if (next) addAggregation(next);
+  };
+  const canAddMoreAgg = aggregations.length < AGGREGATION_OPTIONS.length;
+
+  const chipStyle = { display: "flex", alignItems: "center", height: 24, padding: "0 4px 0 8px", borderRadius: 4, fontSize: T.textP, fontFamily: T.font, fontWeight: 500, cursor: "pointer", userSelect: "none", gap: 4 };
+
+  return (
+    <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* Row 1: Mode + Dataset + Time */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Mode switcher */}
+          <div style={{ display: "flex", backgroundColor: T.muted, borderRadius: T.radius, padding: 2, gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", height: 28, padding: "0 8px", backgroundColor: T.card, borderRadius: 4, border: `1px solid ${T.border}`, gap: 4, cursor: "pointer" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: T.primary }} />
+              <span style={{ fontSize: T.textP, fontWeight: 700, color: T.primary, fontFamily: T.font }}>Builder</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", height: 28, padding: "0 8px", borderRadius: 4, gap: 4, cursor: "pointer" }}>
+              <span style={{ fontSize: T.textP, fontWeight: 700, color: T.fgMuted, fontFamily: T.font }}>DataPrime</span>
+            </div>
+          </div>
+          {/* Data type selector */}
+          <div style={{ position: "relative" }} onMouseLeave={() => setDataTypeOpen(false)}>
+            <div onClick={() => setDataTypeOpen(p => !p)} style={{ display: "flex", alignItems: "center", backgroundColor: T.card, border: `1px solid ${dataTypeOpen ? T.primary : T.border}`, borderRadius: T.radius, height: 32, padding: "0 10px", gap: 6, cursor: "pointer", transition: "border-color 120ms" }}>
+              {dataType === "Spans" ? (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M5 4l-3 3 3 3M9 4l3 3-3 3" stroke="#67e8f9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              ) : dataType === "Logs" ? (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="2" rx="1" fill="#a78bfa"/><rect x="2" y="6" width="10" height="2" rx="1" fill="#a78bfa" opacity="0.6"/><rect x="2" y="10" width="7" height="2" rx="1" fill="#a78bfa" opacity="0.3"/></svg>
+              ) : null}
+              <span style={{ fontSize: T.textP, fontWeight: 600, color: dataType ? T.fg : T.fgMuted, fontFamily: T.font }}>{dataType || "Select dataset"}</span>
+              <ChevronDown size={12} color={T.fgMuted} style={{ transform: dataTypeOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 150ms" }} />
+            </div>
+            {dataTypeOpen && (
+              <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 50, paddingTop: 2 }}>
+                <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", minWidth: 150, padding: "4px 0" }}>
+                  {["Spans", "Logs"].map(dt => {
+                    const isActive = dataType === dt;
+                    return (
+                      <div key={dt}
+                        onClick={() => {
+                          if (dt !== dataType && onSwitchDataType) {
+                            onSwitchDataType(dt);
+                          } else {
+                            setDataType(dt);
+                          }
+                          setDataTypeOpen(false);
+                        }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", cursor: "pointer",
+                          backgroundColor: isActive ? "rgba(42,169,104,0.10)" : "transparent",
+                          color: isActive ? T.primary : T.fg,
+                          fontFamily: T.font, fontSize: T.textP, fontWeight: isActive ? 600 : 400,
+                          transition: "background-color 80ms",
+                        }}
+                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = T.muted; }}
+                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? "rgba(42,169,104,0.10)" : "transparent"; }}>
+                        {dt === "Spans" ? (
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M5 4l-3 3 3 3M9 4l3 3-3 3" stroke={isActive ? T.primary : "#67e8f9"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="2" rx="1" fill={isActive ? T.primary : "#a78bfa"}/><rect x="2" y="6" width="10" height="2" rx="1" fill={isActive ? T.primary : "#a78bfa"} opacity="0.6"/><rect x="2" y="10" width="7" height="2" rx="1" fill={isActive ? T.primary : "#a78bfa"} opacity="0.3"/></svg>
+                        )}
+                        <span>{dt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, height: 32, padding: "0 10px", gap: 6, cursor: "pointer" }}>
+            <span style={{ fontSize: T.textP, fontWeight: 600, color: T.primary, fontFamily: T.font }}>Last 24 Hours</span>
+          </div>
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, cursor: "pointer" }}>
+            <RotateCw size={13} color={T.primary} />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Query input */}
+      <div style={{ position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "center", backgroundColor: T.card, border: `1px solid ${acOpen && AC_SUGGESTIONS.length ? T.primary : T.border}`, borderRadius: T.radius, minHeight: 32, padding: "4px 12px", flexWrap: "wrap", gap: 4, transition: "border-color 120ms" }}>
+          {queryFilters.map(f => (
+            <div key={f.id} style={{
+              display: "flex", alignItems: "center", gap: 3, height: 22, padding: "0 4px 0 6px",
+              borderRadius: 3, fontSize: 12, fontFamily: T.mono,
+              backgroundColor: f.type === "include" ? "rgba(42,169,104,0.12)" : "rgba(239,68,68,0.12)",
+              color: f.type === "include" ? T.primary : "#f87171", flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 10, opacity: 0.7 }}>{f.type === "include" ? "=" : "!="}</span>
+              <span>{f.value}</span>
+              <div onClick={() => removeFilter(f.id)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, borderRadius: 2, cursor: "pointer", marginLeft: 2 }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <X size={8} />
+              </div>
+            </div>
+          ))}
+          <input
+            ref={inputRef}
+            value={queryText}
+            onChange={e => { setQueryText(e.target.value); setAcOpen(true); setAcIndex(0); }}
+            onFocus={() => { if (queryText.trim()) setAcOpen(true); }}
+            onBlur={() => setTimeout(() => setAcOpen(false), 150)}
+            onKeyDown={e => {
+              if (e.key === "ArrowDown") { e.preventDefault(); setAcIndex(i => Math.min(i + 1, AC_SUGGESTIONS.length - 1)); }
+              else if (e.key === "ArrowUp") { e.preventDefault(); setAcIndex(i => Math.max(i - 1, 0)); }
+              else if (e.key === "Enter" && acOpen && AC_SUGGESTIONS.length > 0) { e.preventDefault(); applyAc(AC_SUGGESTIONS[acIndex]); }
+              else if (e.key === "Tab" && acOpen && AC_SUGGESTIONS.length > 0) { e.preventDefault(); applyAc(AC_SUGGESTIONS[acIndex]); }
+              else if (e.key === "Escape") { setAcOpen(false); }
+            }}
+            placeholder={queryFilters.length > 0 ? "Type to add..." : "Type a query..."}
+            style={{
+              flex: 1, minWidth: 100, background: "transparent", border: "none", outline: "none",
+              fontFamily: T.mono, fontSize: T.textP, color: T.fg, height: 24,
+            }}
+          />
+        </div>
+        {acOpen && AC_SUGGESTIONS.length > 0 && (
+          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, paddingTop: 2 }}>
+            <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", padding: "4px 0", maxHeight: 240, overflowY: "auto" }}>
+              {AC_SUGGESTIONS.map((s, i) => {
+                const isActive = i === acIndex;
+                const typeColors = { field: "#c084fc", value: "#4ade80", operator: "#fbbf24", keyword: "#60a5fa" };
+                return (
+                  <div key={s.label + s.type}
+                    onMouseDown={e => { e.preventDefault(); applyAc(s); }}
+                    onMouseEnter={() => setAcIndex(i)}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                      padding: "6px 12px", cursor: "pointer",
+                      backgroundColor: isActive ? T.muted : "transparent",
+                      transition: "background-color 60ms",
+                    }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        padding: "1px 5px", borderRadius: 3, fontSize: 9, fontWeight: 700,
+                        backgroundColor: `${typeColors[s.type]}22`, color: typeColors[s.type],
+                        fontFamily: T.mono, textTransform: "uppercase", flexShrink: 0,
+                      }}>{s.type}</span>
+                      <span style={{ fontFamily: T.mono, fontSize: 12, color: T.fg }}>{s.label}</span>
+                    </div>
+                    <span style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted, flexShrink: 0 }}>{s.desc}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Row 3: Group By + Aggregation + Run */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(42,169,104,0.12)", border: `1px solid ${T.border}`, borderRadius: T.radius, cursor: "pointer" }}>
+            <Filter size={14} color={T.primary} />
+          </div>
+          {/* Group By */}
+          <div style={{ display: "flex", alignItems: "center", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "4px 6px 4px 10px", gap: 4 }}>
+            <span style={{ fontSize: T.textLabel, color: T.fgMuted, fontFamily: T.font, marginRight: 2 }}>Group by</span>
+            {groupBys.length === 0 && (
+              <span style={{ fontSize: T.textLabel, color: T.fgMuted, fontFamily: T.font, fontStyle: "italic", opacity: 0.5 }}>None</span>
+            )}
+            {groupBys.map((gb, i) => (
+              <div key={gb} style={{ ...chipStyle, backgroundColor: "rgba(153,73,219,0.12)", color: "#c084fc" }}>
+                <span
+                  onClick={() => { if (i === 0) cycleGroupBy(); }}
+                  title={i === 0 ? "Click to change primary group by" : gb}
+                  style={{ cursor: i === 0 ? "pointer" : "default", minWidth: 50 }}
+                >
+                  {gb}
+                </span>
+                <div onClick={() => removeGroupBy(gb)} style={{ display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", width: 16, height: 16, borderRadius: 3, marginLeft: 0 }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(153,73,219,0.2)"}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  <X size={10} />
+                </div>
+              </div>
+            ))}
+            {canAddMore && (
+              <div onClick={handleAddGroupBy} title="Add group by field" style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4, color: T.fgMuted }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(153,73,219,0.1)"}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <Plus size={12} />
+              </div>
+            )}
+          </div>
+          {/* Aggregation */}
+          <div style={{ display: "flex", alignItems: "center", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "4px 6px 4px 10px", gap: 4 }}>
+            <span style={{ fontSize: T.textLabel, color: T.fgMuted, fontFamily: T.font, marginRight: 2 }}>Aggregation</span>
+            {aggregations.length === 0 && (
+              <span style={{ fontSize: T.textLabel, color: T.fgMuted, fontFamily: T.font, fontStyle: "italic", opacity: 0.5 }}>Count (on run)</span>
+            )}
+            {aggregations.map((agg, i) => (
+              <div key={agg} style={{ ...chipStyle, backgroundColor: "rgba(30,111,129,0.12)", color: "#67e8f9" }}>
+                <span
+                  onClick={() => { if (i === 0) cyclePrimaryAgg(); }}
+                  title={i === 0 ? "Click to change primary aggregation" : agg}
+                  style={{ cursor: i === 0 ? "pointer" : "default", minWidth: 30 }}
+                >
+                  {agg}
+                </span>
+                <div onClick={() => removeAggregation(agg)} style={{ display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", width: 16, height: 16, borderRadius: 3 }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(30,111,129,0.2)"}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  <X size={10} />
+                </div>
+              </div>
+            ))}
+            {canAddMoreAgg && (
+              <div onClick={handleAddAgg} title="Add aggregation" style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 4, color: T.fgMuted }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(30,111,129,0.1)"}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <Plus size={12} />
+              </div>
+            )}
+          </div>
+        </div>
+        <div onClick={() => { ensureMinAggregation(); if (onRun) onRun(); }} style={{ display: "flex", alignItems: "center", backgroundColor: "#02763a", borderRadius: T.radius, height: 32, padding: "0 12px", gap: 4, cursor: "pointer" }}>
+          <Play size={12} fill="#fff" color="#fff" />
+          <span style={{ fontSize: T.textP, fontWeight: 700, color: "#fff", fontFamily: T.font }}>Run</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChartTooltipContent({ active, payload, label, buckets, series }) {
+  if (!active || !payload?.length) return null;
+  const idx = typeof label === "string" ? parseInt(label, 10) : label;
+  const bucket = buckets[idx];
+  if (!bucket) return null;
+  return (
+    <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, padding: "8px 10px", fontFamily: T.font, fontSize: 11, color: T.fg, minWidth: 180, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+      {bucket.label && <div style={{ marginBottom: 5, color: T.fgMuted, fontSize: 10 }}>{bucket.label}</div>}
+      {[...payload].reverse().map(p => {
+        const svc = series.find(s => s.key === p.dataKey);
+        return (
+          <div key={p.dataKey} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: p.fill, flexShrink: 0 }} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{svc?.label ?? p.dataKey}</span>
+            </span>
+            <span style={{ fontFamily: T.mono, flexShrink: 0 }}>{fmtNum(p.value)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function LineChartIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 11l3.5-5 3 3L13 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
+function AreaChartIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 11l3.5-5 3 3L13 3v8H1z" fill="currentColor" opacity="0.2"/><path d="M1 11l3.5-5 3 3L13 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>; }
+function StackedBarIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="5" width="3" height="8" rx="1" fill="currentColor"/><rect x="1" y="2" width="3" height="3" rx="0" fill="currentColor" opacity="0.4"/><rect x="5.5" y="1" width="3" height="12" rx="1" fill="currentColor"/><rect x="5.5" y="-1" width="3" height="2" rx="0" fill="currentColor" opacity="0.4"/><rect x="10" y="7" width="3" height="6" rx="1" fill="currentColor"/><rect x="10" y="4" width="3" height="3" rx="0" fill="currentColor" opacity="0.4"/></svg>; }
+function GroupedBarIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="0.5" y="5" width="2.5" height="8" rx="0.5" fill="currentColor"/><rect x="3.5" y="7" width="2.5" height="6" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="8" y="3" width="2.5" height="10" rx="0.5" fill="currentColor"/><rect x="11" y="6" width="2.5" height="7" rx="0.5" fill="currentColor" opacity="0.5"/></svg>; }
+
+const CHART_TYPES = [
+  { id: "line", label: "Line chart", Icon: LineChartIcon },
+  { id: "area", label: "Stacked area", Icon: AreaChartIcon },
+  { id: "stackedbar", label: "Stacked bar", Icon: StackedBarIcon },
+  { id: "groupedbar", label: "Grouped bar", Icon: GroupedBarIcon },
+];
+
+function FilterIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 2.5h11l-4 5v4l-3 1.5v-5.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>; }
+function DrilldownIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="1.5" width="10" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M5 5h4M5 7.5h4M5 10h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>; }
+
+const CHART_MENU_ITEMS = [
+  { id: "filter-raw", label: "Filter raw logs", Icon: FilterIcon },
+  { id: "drilldown", label: "Drilldown logs", Icon: DrilldownIcon },
+  { id: "include", label: "Include in query", Icon: IncludeIcon },
+  { id: "exclude", label: "Exclude from query", Icon: ExcludeIcon },
+  { id: "divider" },
+  { id: "copy-value", label: "Copy value", Icon: CopyIcon },
+  { id: "copy-key", label: "Copy key", Icon: CopyIcon },
+  { id: "copy-query", label: "Copy query", Icon: CopyIcon },
+];
+
+function ChartContextMenu({ x, y, seriesName, seriesColor, timeLabel, onClose, onAction }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
+      <div
+        onMouseLeave={onClose}
+        style={{
+          position: "fixed", left: x, top: y, zIndex: 999,
+          backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.4)", minWidth: 210, padding: "4px 0",
+        }}
+      >
+        <div style={{ padding: "8px 12px 6px", borderBottom: `1px solid ${T.border}`, marginBottom: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: seriesColor, flexShrink: 0 }} />
+            <span style={{ fontFamily: T.font, fontSize: 13, fontWeight: 600, color: T.fg }}>{seriesName}</span>
+          </div>
+          <span style={{ fontFamily: T.font, fontSize: 11, color: T.fgMuted }}>{timeLabel} . (30min)</span>
+        </div>
+        {CHART_MENU_ITEMS.map(item => {
+          if (item.id === "divider") return <div key="divider" style={{ height: 1, backgroundColor: T.border, margin: "3px 0" }} />;
+          return (
+            <div
+              key={item.id}
+              onClick={() => onAction(item.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
+                cursor: "pointer", fontFamily: T.font, fontSize: 13,
+                color: T.fg, fontWeight: 400, transition: "background-color 80ms",
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+            >
+              <span style={{ color: T.fgMuted, display: "flex" }}><item.Icon /></span>
+              <span>{item.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = false }) {
+  const [chartType, setChartType] = useState("stackedbar");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
+  const { hoveredLabel, setHoveredLabel, addFilter } = useQuery();
+  const [chartMenu, setChartMenu] = useState(null);
+
+  const yMax = useMemo(() => {
+    let max = 0;
+    if (chartType === "groupedbar") {
+      for (const b of chartBuckets) { for (const s of chartSeries) { const v = b[s.key] ?? 0; if (v > max) max = v; } }
+    } else {
+      for (const b of chartBuckets) { let sum = 0; for (const s of chartSeries) sum += (b[s.key] ?? 0); if (sum > max) max = sum; }
+    }
+    const mag = Math.pow(10, Math.floor(Math.log10(max || 1)));
+    return Math.ceil(max / mag) * mag;
+  }, [chartBuckets, chartSeries, chartType]);
+
+  const yTicks = useMemo(() => Array.from({ length: 5 }, (_, i) => Math.round((yMax / 4) * i)), [yMax]);
+  const legendSeries = useMemo(() => [...chartSeries].reverse(), [chartSeries]);
+  const tooltipRenderer = useCallback(props => <ChartTooltipContent {...props} buckets={chartBuckets} series={chartSeries} />, [chartBuckets, chartSeries]);
+  const activeChartType = CHART_TYPES.find(ct => ct.id === chartType);
+
+  const seriesOpacity = (label) => !hoveredLabel ? 1 : (hoveredLabel === label ? 1 : 0.15);
+
+  const xTickIndices = useMemo(() => {
+    const indices = [];
+    chartBuckets.forEach((b, i) => { if (b.label) indices.push(i); });
+    if (compact && indices.length > 6) return indices.filter((_, i) => i % 2 === 0);
+    return indices;
+  }, [chartBuckets, compact]);
+
+  const xTick = (props) => {
+    const idx = props.payload.value;
+    const bucket = chartBuckets[idx];
+    if (!bucket?.label) return null;
+    if (!xTickIndices.includes(idx)) return null;
+    return <g transform={`translate(${props.x},${props.y})`}><text x={0} y={0} dy={12} textAnchor="middle" fill={T.fgMuted} fontSize={compact ? 9 : 10} fontFamily={T.font}>{bucket.label}</text></g>;
+  };
+
+  const renderChart = () => {
+    const commonXY = { xAxis: { dataKey: "index", interval: 0, tick: xTick, axisLine: false, tickLine: false, tickSize: 0 }, yAxis: { tickFormatter: fmtNum, tick: { fontFamily: T.font, fontSize: compact ? 9 : 10, fill: T.fgMuted }, axisLine: false, tickLine: false, width: compact ? 36 : 44, ticks: yTicks } };
+    if (chartType === "line") return <ResponsiveContainer width="100%" height="100%"><LineChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ stroke: T.fgMuted, strokeDasharray: "3 3" }} />{chartSeries.map(s => <Line key={s.key} type="monotone" dataKey={s.key} stroke={s.color} strokeWidth={hoveredLabel === s.label ? 3 : 1.5} strokeOpacity={seriesOpacity(s.label)} dot={false} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</LineChart></ResponsiveContainer>;
+    if (chartType === "area") return <ResponsiveContainer width="100%" height="100%"><AreaChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ stroke: T.fgMuted, strokeDasharray: "3 3" }} />{chartSeries.map(s => <Area key={s.key} type="monotone" dataKey={s.key} stackId="stack" stroke={s.color} fill={s.color} fillOpacity={seriesOpacity(s.label) * 0.3} strokeOpacity={seriesOpacity(s.label)} strokeWidth={1.5} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</AreaChart></ResponsiveContainer>;
+    if (chartType === "groupedbar") return <ResponsiveContainer width="100%" height="100%"><BarChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="15%" onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ fill: T.muted, opacity: 0.25 }} />{chartSeries.map(s => <Bar key={s.key} dataKey={s.key} fill={s.color} fillOpacity={seriesOpacity(s.label)} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</BarChart></ResponsiveContainer>;
+    return <ResponsiveContainer width="100%" height="100%"><BarChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="2%" onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ fill: T.muted, opacity: 0.25 }} />{chartSeries.map(s => <Bar key={s.key} dataKey={s.key} stackId="stack" fill={s.color} fillOpacity={seriesOpacity(s.label)} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</BarChart></ResponsiveContainer>;
+  };
+
+  const menuItemStyle = { display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", cursor: "pointer", fontFamily: T.font, fontSize: T.textP, color: T.fg, transition: "background-color 80ms" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", minWidth: 0, backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, position: "relative" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", height: 36, minHeight: 36, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+        <span style={{ fontFamily: T.font, fontSize: T.textP, fontWeight: 600, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{aggregationLabel}</span>
+        <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
+          {/* Active chart type indicator */}
+          <div style={{ display: "flex", alignItems: "center", gap: 3, color: T.fgMuted, fontSize: T.textLabel, fontFamily: T.font }}>
+            {activeChartType && <activeChartType.Icon />}
+          </div>
+          {/* 3-dot menu */}
+          <div style={{ position: "relative" }}>
+            <div
+              onClick={() => setMenuOpen(p => !p)}
+              style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 4, cursor: "pointer", color: T.fgMuted, transition: "background-color 80ms" }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+            >
+              <MoreHorizontal size={14} />
+            </div>
+            {menuOpen && (
+              <div
+                onMouseLeave={() => setMenuOpen(false)}
+                style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 50, backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", minWidth: 190, padding: "4px 0" }}>
+                {/* Section: Visualize as */}
+                <div style={{ padding: "4px 12px 2px", fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, fontWeight: 600 }}>Visualize as</div>
+                {CHART_TYPES.map(ct => {
+                  const isActive = ct.id === chartType;
+                  return (
+                    <div key={ct.id} onClick={() => { setChartType(ct.id); }}
+                      style={{ ...menuItemStyle, backgroundColor: isActive ? "rgba(42,169,104,0.10)" : "transparent", color: isActive ? T.primary : T.fg, fontWeight: isActive ? 600 : 400 }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = T.muted; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? "rgba(42,169,104,0.10)" : "transparent"; }}>
+                      <ct.Icon /><span>{ct.label}</span>
+                    </div>
+                  );
+                })}
+                {/* Divider */}
+                <div style={{ height: 1, backgroundColor: T.border, margin: "4px 0" }} />
+                {/* Toggle legend */}
+                <div
+                  onClick={() => setShowLegend(p => !p)}
+                  style={{ ...menuItemStyle }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  <div style={{ width: 14, height: 14, borderRadius: 3, border: `1.5px solid ${showLegend ? T.primary : T.fgMuted}`, backgroundColor: showLegend ? T.primary : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {showLegend && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <span>Show legend</span>
+                </div>
+                {/* Divider */}
+                <div style={{ height: 1, backgroundColor: T.border, margin: "4px 0" }} />
+                {/* Maximize */}
+                <div
+                  style={{ ...menuItemStyle }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  <Maximize2 size={13} /><span>Maximize</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      {/* Body */}
+      <div style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden", borderRadius: `0 0 ${T.radius}px ${T.radius}px`, position: "relative" }}
+        onContextMenu={e => {
+          e.preventDefault();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const xPct = (e.clientX - rect.left) / rect.width;
+          const bucketIdx = Math.min(chartBuckets.length - 1, Math.floor(xPct * chartBuckets.length));
+          const bucket = chartBuckets[bucketIdx];
+          const topSeries = chartSeries.reduce((best, s) => (!best || (bucket[s.key] ?? 0) > (bucket[best.key] ?? 0)) ? s : best, null);
+          setChartMenu({ x: e.clientX, y: e.clientY, bucket, bucketIdx, series: topSeries });
+        }}>
+        <div style={{ flex: 1, minWidth: 0, height: "100%" }}>{renderChart()}</div>
+        {showLegend && (
+          <div style={{ width: compact ? 150 : 200, flexShrink: 0, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: `1px solid ${T.border}` }}>
+              <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 600, color: T.fgMuted }}>Name</span>
+              <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 600, color: T.fgMuted }}>Total</span>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {legendSeries.map(s => {
+                const isHovered = hoveredLabel === s.label;
+                const isDimmed = hoveredLabel && !isHovered;
+                return (
+                  <div key={s.key}
+                    onMouseEnter={() => setHoveredLabel(s.label)}
+                    onMouseLeave={() => setHoveredLabel(null)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", gap: 6, borderBottom: `1px solid ${T.border}`, cursor: "pointer", backgroundColor: isHovered ? T.muted : "transparent", opacity: isDimmed ? 0.35 : 1, transition: "opacity 150ms, background-color 100ms" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: s.color, flexShrink: 0 }} />
+                      <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</span>
+                    </div>
+                    <span style={{ fontFamily: T.mono, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>{fmtNum(s.total)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {chartMenu && (
+          <ChartContextMenu
+            x={chartMenu.x} y={chartMenu.y}
+            seriesName={chartMenu.series?.label ?? "Unknown"}
+            seriesColor={chartMenu.series?.color ?? T.fgMuted}
+            timeLabel={chartMenu.bucket?.label || `Bucket ${chartMenu.bucketIdx + 1}`}
+            onClose={() => setChartMenu(null)}
+            onAction={(actionId) => {
+              if (actionId === "include") addFilter(chartMenu.series?.label, "include");
+              else if (actionId === "exclude") addFilter(chartMenu.series?.label, "exclude");
+              setChartMenu(null);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function REDMetricsView({ panelH }) {
+  const { groupBys } = useQuery();
+  const [durationAgg, setDurationAgg] = useState("Average");
+  const [durationDropOpen, setDurationDropOpen] = useState(false);
+  const DURATION_AGGS = ["Average", "P50", "P95", "P99", "Max"];
+
+  const redCharts = useMemo(() => {
+    const rand1 = makeRand(111);
+    const rand2 = makeRand(222);
+    const rand3 = makeRand(333);
+    const multipliers = { Average: 1, P50: 0.85, P95: 2.4, P99: 4.1, Max: 6.5 };
+    const m = multipliers[durationAgg] ?? 1;
+    const buckets = Array.from({ length: 48 }, (_, i) => {
+      const totalMins = i * 30;
+      const hour = (16 + Math.floor(totalMins / 60)) % 24;
+      const min = totalMins % 60;
+      const label = min === 0 ? `${String(hour).padStart(2, "0")}:00` : "";
+      const t = i / 47;
+      return {
+        index: i, label,
+        rate: Math.round(800 + 400 * Math.sin(t * Math.PI * 2) + rand1() * 100),
+        errors: Math.round(12 + 20 * Math.sin(t * Math.PI * 3 + 1) + rand2() * 8),
+        duration: Math.round((45 + 30 * Math.sin(t * Math.PI * 1.5 + 2) + rand3() * 10) * m),
+      };
+    });
+    return [
+      { id: "rate", title: "Rate", dataKey: "rate", color: "#5095ed", legendLabel: "Request rate", buckets },
+      { id: "errors", title: "Errors", dataKey: "errors", color: "#eb6166", legendLabel: "Errors", buckets },
+      { id: "duration", title: "Duration", dataKey: "duration", color: "#d866e7", legendLabel: "Duration", buckets },
+    ];
+  }, [durationAgg]);
+
+  const groupByLabel = groupBys.length > 0 ? `by ${groupBys.join(", ")}` : "";
+
+  return (
+    <div style={{ display: "flex", gap: 8, height: panelH }}>
+      {redCharts.map(chart => (
+        <div key={chart.id} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px", height: 30, minHeight: 30, borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.fg }}>{chart.title}</span>
+              {/* Duration aggregation chip */}
+              {chart.id === "duration" && (
+                <div style={{ position: "relative" }} onMouseLeave={() => setDurationDropOpen(false)}>
+                  <div onClick={() => setDurationDropOpen(p => !p)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 3, height: 20, padding: "0 6px",
+                      borderRadius: 4, cursor: "pointer", userSelect: "none",
+                      backgroundColor: T.muted, transition: "background-color 80ms",
+                    }}>
+                    <span style={{ fontFamily: T.font, fontSize: 11, fontWeight: 600, color: T.fg }}>{durationAgg}</span>
+                    <ChevronDown size={9} color={T.fgMuted} style={{ transform: durationDropOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 150ms" }} />
+                  </div>
+                  {durationDropOpen && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 50, paddingTop: 2 }}>
+                      <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", minWidth: 110, padding: "4px 0" }}>
+                        {DURATION_AGGS.map(agg => {
+                          const isActive = durationAgg === agg;
+                          return (
+                            <div key={agg} onClick={() => { setDurationAgg(agg); setDurationDropOpen(false); }}
+                              style={{
+                                padding: "5px 12px", cursor: "pointer", fontFamily: T.font, fontSize: 12,
+                                fontWeight: isActive ? 600 : 400,
+                                color: isActive ? T.primary : T.fg,
+                                backgroundColor: isActive ? "rgba(42,169,104,0.10)" : "transparent",
+                                transition: "background-color 80ms",
+                              }}
+                              onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = T.muted; }}
+                              onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? "rgba(42,169,104,0.10)" : "transparent"; }}>
+                              {agg}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <span style={{ fontFamily: T.font, fontSize: 9, color: T.fgMuted }}>{groupByLabel}</span>
+          </div>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chart.buckets} margin={{ top: 6, right: 4, bottom: 18, left: 0 }}>
+                <CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} />
+                <XAxis dataKey="index" interval={0} tick={props => {
+                  const b = chart.buckets[props.payload.value];
+                  if (!b?.label) return null;
+                  const hourLabels = chart.buckets.filter(bk => bk.label).map(bk => bk.index);
+                  const labelIdx = hourLabels.indexOf(props.payload.value);
+                  if (labelIdx % 2 !== 0) return null;
+                  return <g transform={`translate(${props.x},${props.y})`}><text x={0} y={0} dy={10} textAnchor="middle" fill={T.fgMuted} fontSize={9} fontFamily={T.font}>{b.label}</text></g>;
+                }} axisLine={false} tickLine={false} tickSize={0} />
+                <YAxis tickFormatter={chart.id === "duration" ? v => `${v}ms` : fmtNum} tick={{ fontFamily: T.font, fontSize: 9, fill: T.fgMuted }} axisLine={false} tickLine={false} width={chart.id === "duration" ? 38 : 32} />
+                <Tooltip contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }} formatter={v => [chart.id === "duration" ? `${v}ms` : fmtNum(v), chart.title]} labelFormatter={i => chart.buckets[i]?.label || ""} />
+                <Line type="monotone" dataKey={chart.dataKey} stroke={chart.color} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 10px 6px", flexShrink: 0 }}>
+            <span style={{ width: 10, height: 3, borderRadius: 1, backgroundColor: chart.color }} />
+            <span style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>{chart.legendLabel}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HybridView({ panelH }) {
+  const { groupBys } = useQuery();
+  const groupByLabel = groupBys.length > 0 ? `by ${groupBys.join(", ")}` : "";
+
+  const hybridData = useMemo(() => {
+    const rand = makeRand(777);
+    return Array.from({ length: 48 }, (_, i) => {
+      const totalMins = i * 30;
+      const hour = (16 + Math.floor(totalMins / 60)) % 24;
+      const min = totalMins % 60;
+      const label = min === 0 ? `${String(hour).padStart(2, "0")}:00` : "";
+      const t = i / 47;
+      const traffic = Math.round(3000 + 2000 * Math.sin(t * Math.PI * 2) + rand() * 800);
+      return {
+        index: i, label,
+        spans: traffic,
+        errorCount: Math.round(traffic * (0.03 + 0.02 * Math.sin(t * Math.PI * 3 + 1) + rand() * 0.01)),
+        avgLatency: Math.round(350 + 150 * Math.sin(t * Math.PI * 1.2 + 0.5) + rand() * 50),
+        p95Latency: Math.round(800 + 300 * Math.sin(t * Math.PI * 1.3 + 0.8) + rand() * 80),
+        p99Latency: Math.round(5000 + 3000 * Math.sin(t * Math.PI * 1.1 + 1.2) + rand() * 500),
+        p999Latency: Math.round(50000 + 40000 * Math.sin(t * Math.PI * 0.8 + 0.3) + rand() * 10000),
+      };
+    });
+  }, []);
+
+  const scatterDots = useMemo(() => {
+    const rand = makeRand(999);
+    const dots = [];
+    for (let i = 0; i < 48; i++) {
+      const count = 3 + Math.floor(rand() * 5);
+      for (let j = 0; j < count; j++) {
+        const logMin = Math.log10(10);
+        const logMax = Math.log10(2000000);
+        const logVal = logMin + rand() * (logMax - logMin);
+        dots.push({ bucketIdx: i, duration: Math.round(Math.pow(10, logVal)) });
+      }
+    }
+    return dots;
+  }, []);
+
+  const fmtDuration = (v) => {
+    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}s`;
+    if (v >= 1000) return `${(v / 1000).toFixed(0)}ms`;
+    return `${v}us`;
+  };
+
+  const LEGEND = [
+    { label: "Spans", color: "#666", type: "bar" },
+    { label: "Error Count", color: "#eb6166", type: "line" },
+    { label: "Avg Latency", color: "#60a5fa", type: "line" },
+    { label: "P95 Latency", color: "#f97316", type: "line" },
+    { label: "P99 Latency", color: "#f472b6", type: "line" },
+    { label: "P99.9 Latency", color: "#22d3ee", type: "line" },
+    { label: "Span durations", color: "#c084fc", type: "dot" },
+  ];
+
+  const ScatterOverlay = ({ chartArea }) => {
+    if (!chartArea || !chartArea.width) return null;
+    const { left, top, width, height } = chartArea;
+    const logMin = Math.log10(10);
+    const logMax = Math.log10(2000000);
+    const bucketW = width / 48;
+
+    const durationToY = (val) => {
+      const logVal = Math.log10(Math.max(10, val));
+      const yPct = 1 - (logVal - logMin) / (logMax - logMin);
+      return top + yPct * height;
+    };
+
+    const lines = [
+      { key: "avgLatency", color: "#60a5fa", width: 2 },
+      { key: "p95Latency", color: "#f97316", width: 2 },
+      { key: "p99Latency", color: "#f472b6", width: 2 },
+      { key: "p999Latency", color: "#22d3ee", width: 2.5 },
+    ];
+
+    return (
+      <svg style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+        {/* Left Y-axis: Duration log scale labels */}
+        {[10, 100, 1000, 10000, 100000, 1000000].map(val => {
+          const y = durationToY(val);
+          if (y < top - 2 || y > top + height + 2) return null;
+          return (
+            <g key={val}>
+              <line x1={left} y1={y} x2={left + width} y2={y} stroke="#3a3a4a" strokeOpacity={0.3} strokeDasharray="2,3" />
+              <text x={left - 4} y={y + 3} textAnchor="end" fill={T.fgMuted} fontSize={9} fontFamily={T.font}>{fmtDuration(val)}</text>
+            </g>
+          );
+        })}
+        <text x={6} y={top + height / 2} textAnchor="middle" fill={T.fgMuted} fontSize={9} fontFamily={T.font} transform={`rotate(-90, 6, ${top + height / 2})`}>Duration</text>
+        {/* Latency percentile lines */}
+        {lines.map(line => {
+          const points = hybridData.map((b, i) => {
+            const x = left + i * bucketW + bucketW * 0.5;
+            const y = durationToY(b[line.key]);
+            return `${x},${y}`;
+          }).join(" ");
+          return <polyline key={line.key} points={points} fill="none" stroke={line.color} strokeWidth={line.width} strokeLinejoin="round" strokeLinecap="round" />;
+        })}
+        {/* Error count line (right Y axis - linear scale) */}
+        {(() => {
+          const maxErrors = Math.max(...hybridData.map(b => b.errorCount), 1);
+          const points = hybridData.map((b, i) => {
+            const x = left + i * bucketW + bucketW * 0.5;
+            const yPct = 1 - b.errorCount / (maxErrors * 1.2);
+            const y = top + yPct * height;
+            return `${x},${y}`;
+          }).join(" ");
+          return <polyline points={points} fill="none" stroke="#eb6166" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />;
+        })()}
+        {/* Scatter dots */}
+        {scatterDots.map((dot, i) => {
+          const x = left + dot.bucketIdx * bucketW + bucketW * 0.5 + (Math.sin(i * 137.5) * bucketW * 0.3);
+          const y = durationToY(dot.duration);
+          if (y < top || y > top + height) return null;
+          return <circle key={i} cx={x} cy={y} r={2.5} fill="#c084fc" opacity={0.7} />;
+        })}
+      </svg>
+    );
+  };
+
+  const [chartArea, setChartArea] = useState(null);
+  const chartContainerRef = useRef(null);
+
+  return (
+    <div style={{ display: "flex", gap: 0, height: panelH }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px", height: 30, minHeight: 30, borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.fg }}>Hybrid view</span>
+            <span style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>Duration (ms) + Error Count</span>
+          </div>
+          <span style={{ fontFamily: T.font, fontSize: 9, color: T.fgMuted }}>{groupByLabel}</span>
+        </div>
+        {/* Chart */}
+        <div ref={chartContainerRef} style={{ flex: 1, minHeight: 0, position: "relative" }}>
+          <ResponsiveContainer width="100%" height="100%"
+            onResize={(w, h) => {
+              if (w && h) setChartArea({ left: 48, top: 6, width: w - 48 - 40, height: h - 6 - 24 });
+            }}>
+            <BarChart data={hybridData} margin={{ top: 6, right: 40, bottom: 24, left: 48 }} barCategoryGap="1%">
+              <CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.4} />
+              <XAxis dataKey="index" interval={0} tick={props => {
+                const b = hybridData[props.payload.value];
+                if (!b?.label) return null;
+                const hourLabels = hybridData.filter(bk => bk.label).map(bk => bk.index);
+                const labelIdx = hourLabels.indexOf(props.payload.value);
+                if (labelIdx % 2 !== 0) return null;
+                return <g transform={`translate(${props.x},${props.y})`}><text x={0} y={0} dy={10} textAnchor="middle" fill={T.fgMuted} fontSize={9} fontFamily={T.font}>{b.label}</text></g>;
+              }} axisLine={false} tickLine={false} tickSize={0} />
+              {/* Left Y: Duration (log scale labels - decorative, lines are SVG) */}
+              <YAxis yAxisId="left" hide />
+              {/* Right Y: Error/Span count */}
+              <YAxis yAxisId="right" orientation="right"
+                tickFormatter={fmtNum}
+                tick={{ fontFamily: T.font, fontSize: 9, fill: T.fgMuted }} axisLine={false} tickLine={false} width={40}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }}
+                formatter={(v, name) => {
+                  if (name === "spans") return [fmtNum(v), "Spans"];
+                  return [v, name];
+                }}
+                labelFormatter={i => hybridData[i]?.label || ""}
+              />
+              {/* Span volume bars */}
+              <Bar yAxisId="right" dataKey="spans" fill="#555" fillOpacity={0.5} isAnimationActive={false} />
+            </BarChart>
+          </ResponsiveContainer>
+          {/* Scatter overlay */}
+          <ScatterOverlay chartArea={chartArea} />
+        </div>
+        {/* Legend */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "3px 10px 6px", flexShrink: 0, flexWrap: "wrap" }}>
+          {LEGEND.map(l => (
+            <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {l.type === "bar" && <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: l.color, opacity: 0.5 }} />}
+              {l.type === "line" && <span style={{ width: 12, height: 2, borderRadius: 1, backgroundColor: l.color }} />}
+              {l.type === "dot" && <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: l.color, opacity: 0.7 }} />}
+              <span style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>{l.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogsSeverityView({ panelH }) {
+  const data = useMemo(() => {
+    const rand = makeRand(888);
+    return Array.from({ length: 48 }, (_, i) => {
+      const totalMins = i * 30;
+      const hour = (16 + Math.floor(totalMins / 60)) % 24;
+      const min = totalMins % 60;
+      const label = min === 0 ? `${String(hour).padStart(2, "0")}:00` : "";
+      const t = i / 47;
+      const base = 2000 + 800 * Math.sin(t * Math.PI * 2);
+      return {
+        index: i, label,
+        Debug: Math.round(base * 0.45 + rand() * 200),
+        Info: Math.round(base * 0.35 + rand() * 150),
+        Warning: Math.round(base * 0.12 + rand() * 60),
+        Error: Math.round(base * 0.08 + rand() * 40),
+      };
+    });
+  }, []);
+
+  const SEV_COLORS = { Debug: "#9ca3af", Info: "#60a5fa", Warning: "#fbbf24", Error: "#f87171" };
+  const SEVS = ["Debug", "Info", "Warning", "Error"];
+
+  return (
+    <div style={{ display: "flex", gap: 0, height: panelH }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "0 10px", height: 30, minHeight: 30, borderBottom: `1px solid ${T.border}` }}>
+          <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.fg }}>Log volume by severity</span>
+        </div>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 6, right: 4, bottom: 18, left: 0 }} barCategoryGap="1%">
+              <CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} />
+              <XAxis dataKey="index" interval={0} tick={props => {
+                const b = data[props.payload.value];
+                if (!b?.label) return null;
+                const hourLabels = data.filter(bk => bk.label).map(bk => bk.index);
+                const labelIdx = hourLabels.indexOf(props.payload.value);
+                if (labelIdx % 2 !== 0) return null;
+                return <g transform={`translate(${props.x},${props.y})`}><text x={0} y={0} dy={10} textAnchor="middle" fill={T.fgMuted} fontSize={9} fontFamily={T.font}>{b.label}</text></g>;
+              }} axisLine={false} tickLine={false} tickSize={0} />
+              <YAxis tickFormatter={fmtNum} tick={{ fontFamily: T.font, fontSize: 9, fill: T.fgMuted }} axisLine={false} tickLine={false} width={36} />
+              <Tooltip contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }} />
+              {SEVS.map(s => <Bar key={s} dataKey={s} stackId="sev" fill={SEV_COLORS[s]} isAnimationActive={false} />)}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "2px 10px 6px", flexShrink: 0 }}>
+          {SEVS.map(s => (
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: SEV_COLORS[s] }} />
+              <span style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>{s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GraphSection() {
+  const { groupBys, aggregations, dataType } = useQuery();
+  const hasQuery = groupBys.length > 0 || aggregations.length > 0;
+  const hasCustomAgg = aggregations.some(a => a !== "Count");
+  const isLogs = dataType === "Logs";
+
+  // Build modes based on data type
+  const modes = isLogs
+    ? (hasQuery ? ["Logs by severity", "Query result"] : ["Logs by severity"])
+    : (hasQuery ? ["RED metrics", "Hybrid view", "Query result"] : ["RED metrics", "Hybrid view"]);
+
+  const defaultMode = isLogs ? "Logs by severity" : "RED metrics";
+  const [graphMode, setGraphMode] = useState(defaultMode);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Auto-switch to Query result when user adds custom query intent
+  useMemo(() => {
+    if (hasQuery && graphMode === defaultMode && modes.includes("Query result")) {
+      setGraphMode("Query result");
+    }
+    // Switch back if query removed
+    if (!hasQuery && graphMode === "Query result") {
+      setGraphMode(defaultMode);
+    }
+  }, [hasQuery, hasCustomAgg]);
+
+  // Reset mode when data type changes
+  useMemo(() => {
+    if (isLogs && !modes.includes(graphMode)) setGraphMode("Logs by severity");
+    if (!isLogs && !modes.includes(graphMode)) setGraphMode("RED metrics");
+  }, [dataType]);
+
+  const [panelH, setPanelH] = useState(240);
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef(null);
+
+  const onHandleDown = useCallback(e => {
+    if (collapsed) return;
+    e.preventDefault();
+    dragRef.current = { startY: e.clientY, startH: panelH };
+    setDragging(true);
+    const onMove = ev => { if (dragRef.current) setPanelH(Math.max(140, Math.round(dragRef.current.startH + ev.clientY - dragRef.current.startY))); };
+    const onUp = () => { dragRef.current = null; setDragging(false); document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [panelH, collapsed]);
+
+  const segStyle = (active) => ({
+    display: "flex", alignItems: "center", justifyContent: "center",
+    height: 20, padding: "0 8px", borderRadius: 4, cursor: "pointer",
+    fontFamily: T.font, fontSize: 12, fontWeight: 700, userSelect: "none",
+    color: active ? T.primary : T.fgMuted,
+    backgroundColor: active ? T.card : "transparent",
+    border: active ? `1px solid ${T.border}` : "1px solid transparent",
+    boxShadow: active ? "0 0 4px rgba(0,0,0,0.12)" : "none",
+    transition: "all 120ms",
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0 6px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}
+          onClick={() => setCollapsed(c => !c)}>
+          <ChevronDown size={12} color={T.fgMuted} style={{ transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 200ms" }} />
+          <span style={{ fontFamily: T.font, fontSize: 14, fontWeight: 500, color: T.fg }}>
+            {graphMode}
+          </span>
+        </div>
+        {/* Segmented toggle */}
+        <div style={{ display: "flex", backgroundColor: T.muted, borderRadius: 6, padding: 2, gap: 2 }}>
+          {modes.map(mode => (
+            <div key={mode} onClick={() => { setGraphMode(mode); if (collapsed) setCollapsed(false); }} style={segStyle(graphMode === mode)}>
+              {mode}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content based on mode - hidden when collapsed */}
+      {!collapsed && (
+        <>
+          {graphMode === "RED metrics" && <REDMetricsView panelH={panelH} />}
+          {graphMode === "Hybrid view" && <HybridView panelH={panelH} />}
+          {graphMode === "Logs by severity" && <LogsSeverityView panelH={panelH} />}
+          {graphMode === "Query result" && <QueryResultsSectionInner panelH={panelH} />}
+        </>
+      )}
+
+      {/* Resize handle - hidden when collapsed */}
+      {!collapsed && (
+        <div onMouseDown={onHandleDown} style={{ height: 8, cursor: "ns-resize", display: "flex", alignItems: "center", justifyContent: "center", userSelect: "none" }}>
+          <div style={{ width: 36, height: 3, borderRadius: 2, backgroundColor: dragging ? T.fgMuted : T.border, transition: "background-color 150ms" }} />
+        </div>
+      )}
+    </div>
+  );
+}
+function QueryResultsSectionInner({ panelH }) {
+  const { chartsData, aggregations, groupBys } = useQuery();
+  const [carouselOffset, setCarouselOffset] = useState(0);
+  const [containerW, setContainerW] = useState(0);
+  const containerRef = useRef(null);
+
+  const setRef = useCallback(el => {
+    containerRef.current = el;
+    if (el) setContainerW(el.offsetWidth);
+  }, []);
+
+  useMemo(() => {
+    if (typeof window === "undefined") return;
+    const measure = () => { if (containerRef.current) setContainerW(containerRef.current.offsetWidth); };
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  const aggLabels = { Count: "Count", "Count Distinct": "Count Distinct", Sum: "Sum (bytes)", Min: "Min", Max: "Max" };
+  const buildLabel = (agg) => {
+    const aggName = aggLabels[agg] ?? agg;
+    if (groupBys.length === 0) return aggName;
+    return `${aggName} by ${groupBys.join(", ")}`;
+  };
+  const count = chartsData.length;
+  const needsCarousel = count > 3;
+  const maxOffset = Math.max(0, count - 3);
+
+  useMemo(() => { if (carouselOffset > maxOffset) setCarouselOffset(maxOffset); }, [count]);
+
+  const navBtn = { width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", border: `1px solid ${T.border}`, backgroundColor: T.card, cursor: "pointer", color: T.fg, flexShrink: 0, transition: "background-color 80ms" };
+
+  const gap = 8;
+  const visibleSlots = needsCarousel ? 3 : count;
+  const chartW = containerW > 0 ? Math.floor((containerW - gap * (visibleSlots - 1)) / visibleSlots) : 400;
+  const trackW = count * chartW + (count - 1) * gap;
+  const translateX = -(carouselOffset * (chartW + gap));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: 0, height: panelH, position: "relative", alignItems: "stretch" }}>
+        {/* Carousel left arrow */}
+        {needsCarousel && (
+          <div style={{ display: "flex", alignItems: "center", flexShrink: 0, paddingRight: 6 }}>
+            <div
+              onClick={() => setCarouselOffset(o => Math.max(0, o - 1))}
+              style={{ ...navBtn, opacity: carouselOffset === 0 ? 0.3 : 1, pointerEvents: carouselOffset === 0 ? "none" : "auto" }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = T.card}
+            >
+              <ChevronDown size={14} style={{ transform: "rotate(90deg)" }} />
+            </div>
+          </div>
+        )}
+
+        {needsCarousel ? (
+          /* Sliding carousel track */
+          <div ref={setRef} style={{ flex: 1, overflow: "hidden", minWidth: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: gap,
+                width: trackW > 0 ? trackW : "100%",
+                transform: `translateX(${translateX}px)`,
+                transition: "transform 400ms cubic-bezier(0.25, 0.1, 0.25, 1)",
+                height: "100%",
+              }}
+            >
+              {chartsData.map(cd => (
+                <div key={cd.aggregation} style={{ width: chartW > 0 ? chartW : "50%", flexShrink: 0, height: "100%" }}>
+                  <SingleChart
+                    chartSeries={cd.series}
+                    chartBuckets={cd.buckets}
+                    aggregationLabel={buildLabel(cd.aggregation)}
+                    compact={true}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Non-carousel: 1 to 3 charts side by side */
+          <div style={{ flex: 1, display: "flex", gap: 8, minWidth: 0, height: "100%" }}>
+            {chartsData.map(cd => (
+              <div key={cd.aggregation} style={{ flex: 1, minWidth: 0, height: "100%" }}>
+                <SingleChart
+                  chartSeries={cd.series}
+                  chartBuckets={cd.buckets}
+                  aggregationLabel={buildLabel(cd.aggregation)}
+                  compact={count > 1}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Carousel right arrow */}
+        {needsCarousel && (
+          <div style={{ display: "flex", alignItems: "center", flexShrink: 0, paddingLeft: 6 }}>
+            <div
+              onClick={() => setCarouselOffset(o => Math.min(maxOffset, o + 1))}
+              style={{ ...navBtn, opacity: carouselOffset >= maxOffset ? 0.3 : 1, pointerEvents: carouselOffset >= maxOffset ? "none" : "auto" }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = T.card}
+            >
+              <ChevronDown size={14} style={{ transform: "rotate(-90deg)" }} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Carousel dots */}
+      {needsCarousel && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, padding: "6px 0 2px" }}>
+          {Array.from({ length: maxOffset + 1 }, (_, i) => (
+            <div
+              key={i}
+              onClick={() => setCarouselOffset(i)}
+              style={{
+                width: carouselOffset === i ? 16 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: carouselOffset === i ? T.primary : T.border,
+                cursor: "pointer",
+                transition: "all 300ms cubic-bezier(0.25, 0.1, 0.25, 1)",
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CopyIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5" stroke="currentColor" strokeWidth="1.2"/></svg>; }
+function QueryIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="2" rx="0.5" stroke="currentColor" strokeWidth="1.2"/><rect x="1.5" y="6.5" width="8" height="2" rx="0.5" stroke="currentColor" strokeWidth="1.2"/><rect x="1.5" y="10.5" width="5" height="2" rx="0.5" stroke="currentColor" strokeWidth="1.2"/></svg>; }
+function EyeIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.2"/></svg>; }
+function IncludeIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/><path d="M7 4.5v5M4.5 7h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>; }
+function ExcludeIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/><path d="M4.5 7h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>; }
+
+const CELL_MENU_ITEMS = [
+  { id: "copy-value", label: "Copy value", Icon: CopyIcon },
+  { id: "copy-query", label: "Copy query", Icon: CopyIcon },
+  { id: "see-raw", label: "See raw logs", Icon: EyeIcon },
+  { id: "include", label: "Include in query", Icon: IncludeIcon },
+  { id: "exclude", label: "Exclude from query", Icon: ExcludeIcon },
+];
+
+function CellContextMenu({ x, y, onClose, cellValue, onAction }) {
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
+      <div
+        onMouseLeave={onClose}
+        style={{
+          position: "fixed", left: x, top: y, zIndex: 999,
+          backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.4)", minWidth: 190, padding: "4px 0",
+        }}
+      >
+        {CELL_MENU_ITEMS.map((item, i) => (
+          <div key={item.id}>
+            {i === 2 || i === 4 ? <div style={{ height: 1, backgroundColor: T.border, margin: "3px 0" }} /> : null}
+            <div
+              onClick={() => { if (onAction) onAction(item.id, cellValue); onClose(); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
+                cursor: "pointer", fontFamily: T.font, fontSize: 13,
+                color: T.fg, fontWeight: 400,
+                transition: "background-color 80ms",
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+            >
+              <span style={{ color: T.fgMuted, display: "flex" }}><item.Icon /></span>
+              <span>{item.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function useCellMenu() {
+  const { addFilter } = useQuery();
+  const [menu, setMenu] = useState(null);
+  const onCellContext = useCallback((e, value) => {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY, value });
+  }, []);
+  const closeMenu = useCallback(() => setMenu(null), []);
+  const onAction = useCallback((actionId, value) => {
+    if (actionId === "include") addFilter(value, "include");
+    else if (actionId === "exclude") addFilter(value, "exclude");
+  }, [addFilter]);
+  return { menu, onCellContext, closeMenu, onAction };
+}
+
+function OverviewTable({ rows, groupBys, aggregations }) {
+  const { hoveredLabel, setHoveredLabel } = useQuery();
+  const { menu, onCellContext, closeMenu, onAction } = useCellMenu();
+  const [sortDir, setSortDir] = useState("desc");
+  const [sortAgg, setSortAgg] = useState(aggregations[0]);
+  const sorted = useMemo(() => {
+    if (!sortDir) return rows;
+    return [...rows].sort((a, b) => {
+      const aVal = (aggregations.length > 1 && a.aggValues) ? (a.aggValues[sortAgg] ?? a.value) : a.value;
+      const bVal = (aggregations.length > 1 && b.aggValues) ? (b.aggValues[sortAgg] ?? b.value) : b.value;
+      return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+    });
+  }, [rows, sortDir, sortAgg, aggregations]);
+  const toggleSort = (agg) => {
+    if (sortAgg === agg) setSortDir(prev => prev === "desc" ? "asc" : "desc");
+    else { setSortAgg(agg); setSortDir("desc"); }
+  };
+  const SortIcon = sortDir === "asc" ? ChevronUp : ChevronDown;
+  const aggLabels = { Count: "count", "Count Distinct": "count distinct", Sum: "sum (bytes)", Min: "min", Max: "max" };
+
+  const thBase = { padding: "8px 12px", textAlign: "left", color: T.fgMuted, fontWeight: 600, fontSize: T.textLabel, userSelect: "none", position: "sticky", top: 0, backgroundColor: T.muted, zIndex: 1 };
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.font, fontSize: T.textP }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${T.border}`, backgroundColor: T.muted }}>
+              <th style={{ ...thBase, width: 40 }}>#</th>
+              {groupBys.map(gb => (
+                <th key={gb} style={{ ...thBase, minWidth: 100 }}>{gb}</th>
+              ))}
+              {aggregations.map(agg => (
+                <th key={agg} onClick={() => toggleSort(agg)} style={{ ...thBase, width: 140, cursor: "pointer" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {aggLabels[agg] ?? agg}
+                    {sortAgg === agg && sortDir && <SortIcon size={12} />}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((row, i) => {
+              const isHovered = hoveredLabel === row.label;
+              const isDimmed = hoveredLabel && !isHovered;
+              return (
+              <tr key={row.rank}
+                onMouseEnter={() => setHoveredLabel(row.label)}
+                onMouseLeave={() => setHoveredLabel(null)}
+                style={{ borderBottom: `1px solid ${T.border}`, transition: "background-color 100ms, opacity 150ms", backgroundColor: isHovered ? T.muted : "transparent", opacity: isDimmed ? 0.35 : 1, cursor: "pointer" }}>
+                <td style={{ padding: "7px 12px", color: T.fgMuted, fontSize: T.textLabel, fontFamily: T.mono }}>{i + 1}</td>
+                {groupBys.map((gb, gi) => {
+                  const cellVal = row.fields?.[gb] ?? row.label;
+                  return (
+                  <td key={gb} style={{ padding: "7px 12px" }} onContextMenu={e => onCellContext(e, cellVal)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {gi === 0 && <span style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: row.color, flexShrink: 0 }} />}
+                      {gb === "level" && row.fields?.[gb] ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", backgroundColor: (LEVEL_COLORS[row.fields[gb]] ?? { bg: T.muted }).bg, color: (LEVEL_COLORS[row.fields[gb]] ?? { fg: T.fg }).fg, borderRadius: 3, padding: "1px 6px", fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 600 }}>
+                          {row.fields[gb]}
+                        </span>
+                      ) : (
+                        <span style={{ color: T.fg, fontSize: T.textP, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 300 }}>
+                          {cellVal}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  );
+                })}
+                {aggregations.map(agg => {
+                  const val = (aggregations.length > 1 && row.aggValues) ? (row.aggValues[agg] ?? row.value) : row.value;
+                  return (
+                    <td key={agg} style={{ padding: "7px 12px", textAlign: "left", fontFamily: T.mono, fontSize: T.textP, color: T.fg, whiteSpace: "nowrap" }} onContextMenu={e => onCellContext(e, fmtValue(val))}>{fmtValue(val)}</td>
+                  );
+                })}
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>
+        {sorted.length} results
+      </div>
+      {menu && <CellContextMenu x={menu.x} y={menu.y} cellValue={menu.value} onClose={closeMenu} onAction={onAction} />}
+    </div>
+  );
+}
+
+function SpansTableSimple({ groupBys }) {
+  const { menu, onCellContext, closeMenu, onAction } = useCellMenu();
+  const SERVICES = [
+    { name: "checkoutservice", color: "#00a3e0" },
+    { name: "recommendationservice", color: "#3d6cb9" },
+    { name: "paymentservice", color: "#029449" },
+  ];
+  const STATUSES = [200, 500, null, 200, 300, 200, 300, null, 200, 500];
+  const DURATIONS = ["19.6ms", "12.6us", "3s", "19.6ms", "12.6us", "3s", "19.6ms", "12.6us", "3s", "19.6ms"];
+  const PERCS = ["79%", "9%", "19%", "79%", "9%", "19%", "79%", "9%", "19%", "79%"];
+
+  const rows = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1, ts: "2023-03-16 09:23:0.12", svc: SERVICES[i % 3],
+    op: "/hipstershop.ProductCat...", kind: ["Client", "Server", "Internal"][i % 3],
+    status: STATUSES[i], dur: DURATIONS[i], perc: PERCS[i], spanId: "h43893gh508h2",
+  }));
+
+  const thStyle = { padding: "7px 10px", textAlign: "left", color: T.fgMuted, fontWeight: 600, fontSize: T.textLabel, whiteSpace: "nowrap", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, backgroundColor: T.muted, fontFamily: T.font, position: "sticky", top: 0, zIndex: 1 };
+  const tdStyle = { padding: "6px 10px", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: T.textLabel, color: T.fg, whiteSpace: "nowrap" };
+
+  const renderGroupByValue = (field, value, row) => {
+    if (field === "serviceName") {
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: row.svc.color, flexShrink: 0 }} />
+          <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg }}>{row.svc.name}</span>
+        </div>
+      );
+    }
+    if (field === "level") {
+      const c = LEVEL_COLORS[value] ?? { bg: "rgba(107,114,128,0.15)", fg: "#9ca3af" };
+      return <span style={{ display: "inline-flex", alignItems: "center", backgroundColor: c.bg, color: c.fg, borderRadius: 3, padding: "1px 6px", fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 600 }}>{value}</span>;
+    }
+    return <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120, display: "inline-block" }}>{value}</span>;
+  };
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 + groupBys.length * 130 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thStyle, width: 36 }}>#</th>
+              <th style={thStyle}>Timestamp</th>
+              {groupBys.map(gb => (
+                <th key={gb} style={{ ...thStyle, minWidth: 100 }}>{gb}</th>
+              ))}
+              <th style={thStyle}>Operation</th>
+              <th style={thStyle}>Span kind</th>
+              <th style={{ ...thStyle, textAlign: "center" }}>Status</th>
+              <th style={thStyle}>Duration</th>
+              <th style={{ ...thStyle, borderRight: "none" }}>Span ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.id} style={{ cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <td style={{ ...tdStyle, textAlign: "center", color: T.fgMuted }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 2, justifyContent: "center" }}>
+                    <ChevronRight size={10} color={T.fgMuted} />
+                    <span>{row.id}</span>
+                  </div>
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.ts)}>{row.ts}</td>
+                {groupBys.map(gb => (
+                  <td key={gb} style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, MOCK_GROUP_BY_VALUES[gb]?.[row.id - 1] ?? "-")}>
+                    {renderGroupByValue(gb, MOCK_GROUP_BY_VALUES[gb]?.[row.id - 1] ?? "-", row)}
+                  </td>
+                ))}
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.op)}>{row.op}</td>
+                <td style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, row.kind)}>{row.kind}</td>
+                <td style={{ ...tdStyle, textAlign: "center" }} onContextMenu={e => onCellContext(e, row.status)}>
+                  {row.status ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: row.status === 200 ? "rgba(22,101,52,0.2)" : row.status === 300 ? "rgba(146,64,14,0.2)" : "rgba(153,27,27,0.2)", color: row.status === 200 ? "#4ade80" : row.status === 300 ? "#fbbf24" : "#f87171", borderRadius: 4, padding: "1px 6px", fontSize: T.textLabel, fontWeight: 600 }}>
+                      {row.status}
+                    </span>
+                  ) : <span style={{ color: T.fgMuted }}>-</span>}
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.dur)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>{row.dur}</span>
+                    <div style={{ flex: 1, minWidth: 20, height: 4, backgroundColor: T.border, borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: row.perc, backgroundColor: row.status === 500 ? "#ef4444" : T.primary, borderRadius: 2 }} />
+                    </div>
+                    <span style={{ color: T.fgMuted }}>{row.perc}</span>
+                  </div>
+                </td>
+                <td style={{ ...tdStyle, borderRight: "none", color: T.fgMuted }} onContextMenu={e => onCellContext(e, row.spanId)}>{row.spanId}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>
+        10 spans
+      </div>
+      {menu && <CellContextMenu x={menu.x} y={menu.y} cellValue={menu.value} onClose={closeMenu} onAction={onAction} />}
+    </div>
+  );
+}
+
+function TracesTable({ groupBys }) {
+  const { menu, onCellContext, closeMenu, onAction } = useCellMenu();
+  const SERVICES = [
+    { name: "checkoutservice", color: "#00a3e0", icon: "~" },
+    { name: "recommendationservice", color: "#3d6cb9", icon: "R" },
+    { name: "paymentservice", color: "#029449", icon: "R" },
+  ];
+  const METHODS = ["GET", "GET", "HDEL", "GET", "GET", "HDEL", "GET", "HDEL", "HDEL", "HDEL", "HDEL", "GET", "HDEL", "HDEL", "GET", "GET", "HDEL"];
+  const SVC_COUNTS = [21, 11, 17, 22, 18, 16, 15, 12, 20, 19, 14, 10, 9, 13, 8, 7, 6];
+  const SPAN_COUNTS = [5, 43, 78, 12, 34, 90, 27, 56, 89, 62, 11, 33, 74, 46, 80, 15, 68];
+  const ERRORS = [1, 0, 2, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];
+  const ERR_PCTS = ["7.7%", "0%", "19%", "0%", "0%", "0%", "1.3%", "0%", "0%", "2%", "0%", "0%", "0%", "0%", "0%", "0%", "0%"];
+  const DURATIONS = ["35ms", "29ms", "21ms", "33ms", "23ms", "19ms", "31ms", "27ms", "15ms", "13ms", "11ms", "9ms", "7ms", "5ms", "25ms", "17ms", "3ms"];
+
+  const BREAKDOWN_COLORS = ["#216def", "#f97316", "#ef4d7b", "#fec52d", "#9949db", "#3cc48f", "#5a8cf8"];
+
+  const rows = Array.from({ length: 17 }, (_, i) => {
+    const svc = SERVICES[i % 3];
+    const segments = [];
+    let remaining = 100;
+    const segCount = 4 + (i % 3);
+    for (let s = 0; s < segCount; s++) {
+      const w = s === segCount - 1 ? remaining : Math.max(5, Math.floor(remaining * (0.15 + ((i * 7 + s * 13) % 30) / 100)));
+      segments.push({ width: w, color: BREAKDOWN_COLORS[(i + s) % BREAKDOWN_COLORS.length] });
+      remaining -= w;
+      if (remaining <= 0) break;
+    }
+    return {
+      id: i + 1,
+      ts: "2023-03-16 09:23:0.12",
+      svc,
+      op: "/hipstershop.ProductCat...",
+      method: METHODS[i],
+      resource: METHODS[i] === "HDEL" ? "HDEL" : "http://shop.ProductCat",
+      svcCount: SVC_COUNTS[i],
+      spanCount: SPAN_COUNTS[i],
+      errors: ERRORS[i],
+      errPct: ERR_PCTS[i],
+      duration: DURATIONS[i],
+      segments,
+      traceId: "h43893gh508h2",
+    };
+  });
+
+  const thStyle = { padding: "7px 10px", textAlign: "left", color: T.fgMuted, fontWeight: 600, fontSize: T.textLabel, whiteSpace: "nowrap", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, backgroundColor: T.muted, fontFamily: T.font, position: "sticky", top: 0, zIndex: 1 };
+  const tdStyle = { padding: "6px 10px", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: T.textLabel, color: T.fg, whiteSpace: "nowrap" };
+
+  const renderGroupByValue = (field, value, row) => {
+    if (field === "serviceName") {
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 18, height: 18, borderRadius: 4, backgroundColor: row.svc.color, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0, color: "#fff" }}>
+            {row.svc.icon}
+          </span>
+          <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg }}>{row.svc.name}</span>
+        </div>
+      );
+    }
+    if (field === "level") {
+      const c = LEVEL_COLORS[value] ?? { bg: "rgba(107,114,128,0.15)", fg: "#9ca3af" };
+      return <span style={{ display: "inline-flex", alignItems: "center", backgroundColor: c.bg, color: c.fg, borderRadius: 3, padding: "1px 6px", fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 600 }}>{value}</span>;
+    }
+    return <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120, display: "inline-block" }}>{value}</span>;
+  };
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 + groupBys.length * 130 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thStyle, width: 36 }}>#</th>
+              <th style={thStyle}>Start timestamp</th>
+              {groupBys.map(gb => (
+                <th key={gb} style={{ ...thStyle, minWidth: 100 }}>{gb}</th>
+              ))}
+              <th style={thStyle}>Operation</th>
+              <th style={thStyle}>Resource</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Service count</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Span count</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Errors</th>
+              <th style={thStyle}>Duration</th>
+              <th style={{ ...thStyle, minWidth: 140 }}>Breakdown</th>
+              <th style={{ ...thStyle, borderRight: "none" }}>Trace ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.id} style={{ cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <td style={{ ...tdStyle, textAlign: "center", color: T.fgMuted }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 2, justifyContent: "center" }}>
+                    <ChevronRight size={10} color={T.fgMuted} />
+                    <span>{row.id}</span>
+                  </div>
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.ts)}>{row.ts}</td>
+                {groupBys.map(gb => (
+                  <td key={gb} style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, MOCK_GROUP_BY_VALUES[gb]?.[row.id - 1] ?? "-")}>
+                    {renderGroupByValue(gb, MOCK_GROUP_BY_VALUES[gb]?.[row.id - 1] ?? "-", row)}
+                  </td>
+                ))}
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.op)}>{row.op}</td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.resource)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      backgroundColor: row.method === "GET" ? "rgba(29,78,216,0.15)" : "rgba(239,68,68,0.15)",
+                      color: row.method === "GET" ? "#60a5fa" : "#f87171",
+                      borderRadius: 3, padding: "0 4px", fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {row.method}
+                    </span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
+                      {row.resource}
+                    </span>
+                  </div>
+                </td>
+                <td style={{ ...tdStyle, textAlign: "right" }} onContextMenu={e => onCellContext(e, row.svcCount)}>{row.svcCount}</td>
+                <td style={{ ...tdStyle, textAlign: "right" }} onContextMenu={e => onCellContext(e, row.spanCount)}>{row.spanCount}</td>
+                <td style={{ ...tdStyle, textAlign: "right" }} onContextMenu={e => onCellContext(e, row.errors)}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
+                    <span style={{ color: row.errors > 0 ? "#f87171" : T.fg }}>{row.errors}</span>
+                    <span style={{ color: T.fgMuted, minWidth: 28, textAlign: "right" }}>{row.errPct}</span>
+                  </div>
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.duration)}>{row.duration}</td>
+                <td style={tdStyle}>
+                  <div style={{ display: "flex", height: 14, borderRadius: 3, overflow: "hidden", minWidth: 100 }}>
+                    {row.segments.map((seg, si) => (
+                      <div key={si} style={{ width: `${seg.width}%`, backgroundColor: seg.color, minWidth: 2 }} />
+                    ))}
+                  </div>
+                </td>
+                <td style={{ ...tdStyle, borderRight: "none", color: T.fgMuted }} onContextMenu={e => onCellContext(e, row.traceId)}>{row.traceId}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted }}>
+        {rows.length} traces
+      </div>
+      {menu && <CellContextMenu x={menu.x} y={menu.y} cellValue={menu.value} onClose={closeMenu} onAction={onAction} />}
+    </div>
+  );
+}
+
+const DEP_MAP_SERVICES = [
+  { id: "loadgenerator", name: "loadgenerator", type: "Service", icon: "+", color: "#74747c", requests: 0 },
+  { id: "frontend", name: "frontend", type: "Service", icon: "o", color: "#2aa968", requests: 168, errors: 5, warning: "168X" },
+  { id: "productcatalogservice", name: "productcatalogservice", type: "Service", icon: "~", color: "#00a3e0", requests: 894, warning: "894X" },
+  { id: "currencyservice", name: "currencyservice", type: "Service", icon: "@", color: "#2aa968", requests: 656, warning: "656X" },
+  { id: "cartservice", name: "cartservice", type: "Service", icon: "NET", color: "#5a3e9e", requests: 153, warning: "153X" },
+  { id: "recommendationservice", name: "recommendationservice", type: "Service", icon: "-", color: "#6b7280", requests: 110, warning: "110X" },
+  { id: "adservice", name: "adservice", type: "Service", icon: "J", color: "#9949db", requests: 100, warning: "100X" },
+  { id: "shippingservice", name: "shippingservice", type: "Service", icon: "~", color: "#00a3e0", requests: 41, warning: "41X" },
+  { id: "cll-lambda-python", name: "cll-lambda-python", type: "Service", icon: "Py", color: "#3d6cb9", requests: 6, warning: "6X" },
+  { id: "cll-lambda-python-2", name: "cll-lambda-python-2", type: "Service", icon: "Py", color: "#3d6cb9", requests: 3, warning: "3X" },
+  { id: "cll-lambda-nodejs-2", name: "cll-lambda-nodejs-2", type: "Service", icon: "N", color: "#2aa968", requests: 6, warning: "6X" },
+  { id: "cll-lambda-nodejs", name: "cll-lambda-nodejs", type: "Service", icon: "L", color: "#9949db", requests: 10, warning: "10X" },
+  { id: "redis", name: "redis:redis-cart", type: "Database", icon: "d", color: "#dc2626", requests: 165, warning: "165X" },
+  { id: "dynamodb", name: "dynamodb:dynamodb.eu-wes...", type: "Database", icon: "o", color: "#216def", requests: 6, warning: "6X" },
+];
+
+const DEP_MAP_EDGES = [
+  { from: "loadgenerator", to: "frontend", latency: "371.8 ms" },
+  { from: "frontend", to: "productcatalogservice", latency: "158.7 ms" },
+  { from: "frontend", to: "currencyservice", latency: "323 us" },
+  { from: "frontend", to: "cartservice", latency: "3.3 ms" },
+  { from: "frontend", to: "recommendationservice", latency: "649.8 ms" },
+  { from: "frontend", to: "adservice", latency: "54.9 ms" },
+  { from: "frontend", to: "shippingservice", latency: "37 us" },
+  { from: "cll-lambda-python", to: "cll-lambda-python-2", latency: "1.30 s" },
+  { from: "cll-lambda-nodejs-2", to: "cll-lambda-nodejs", latency: "622.5 ms" },
+  { from: "cartservice", to: "redis", latency: "619.7 ms" },
+  { from: "cll-lambda-nodejs", to: "dynamodb", latency: "259.3 ms" },
+];
+
+const DEP_MAP_POSITIONS = {
+  loadgenerator: { x: 5, y: 12 },
+  frontend: { x: 28, y: 12 },
+  productcatalogservice: { x: 55, y: 2 },
+  currencyservice: { x: 55, y: 22 },
+  recommendationservice: { x: 80, y: 2 },
+  adservice: { x: 80, y: 22 },
+  cartservice: { x: 55, y: 42 },
+  redis: { x: 80, y: 42 },
+  "cll-lambda-python": { x: 5, y: 52 },
+  "cll-lambda-python-2": { x: 28, y: 52 },
+  "cll-lambda-nodejs-2": { x: 5, y: 72 },
+  "cll-lambda-nodejs": { x: 28, y: 72 },
+  shippingservice: { x: 55, y: 62 },
+  dynamodb: { x: 55, y: 82 },
+};
+
+function DependencyMap() {
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const sortedServices = [...DEP_MAP_SERVICES].sort((a, b) => b.requests - a.requests);
+  const filteredServices = sortedServices.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const maxRequests = Math.max(...sortedServices.map(s => s.requests), 1);
+
+  const nodeW = 180;
+  const nodeH = 52;
+  const canvasW = 760;
+  const canvasH = 480;
+
+  return (
+    <div style={{ display: "flex", height: 520, overflow: "hidden" }}>
+      {/* Left panel: service list */}
+      <div style={{ width: 280, flexShrink: 0, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ padding: "12px 12px 8px", fontFamily: T.font, fontSize: 14, fontWeight: 700, color: T.fg }}>
+          Dependency Map
+        </div>
+        {/* Search */}
+        <div style={{ padding: "0 12px 8px" }}>
+          <div style={{ display: "flex", alignItems: "center", backgroundColor: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, height: 28, padding: "0 8px", gap: 6 }}>
+            <Search size={12} color={T.fgMuted} />
+            <input
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Search"
+              style={{ border: "none", outline: "none", backgroundColor: "transparent", color: T.fg, fontFamily: T.font, fontSize: T.textP, flex: 1, padding: 0 }}
+            />
+          </div>
+        </div>
+        {/* Column headers */}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 12px", fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted }}>
+          <span>Name</span>
+          <span>Request Volume</span>
+        </div>
+        {/* Service rows */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {filteredServices.map(svc => (
+            <div
+              key={svc.id}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "6px 12px", cursor: "pointer",
+                backgroundColor: hoveredNode === svc.id ? T.muted : "transparent",
+                transition: "background-color 80ms",
+              }}
+              onMouseEnter={() => setHoveredNode(svc.id)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <span style={{ fontSize: 9, color: T.fgMuted }}>:</span>
+                <span style={{ width: 24, height: 24, borderRadius: 4, backgroundColor: svc.color, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", flexShrink: 0 }}>
+                  {svc.icon.slice(0, 2)}
+                </span>
+                <span style={{ fontFamily: T.font, fontSize: T.textP, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {svc.name}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                <span style={{ fontFamily: T.mono, fontSize: T.textLabel, color: "#f59e0b" }}>
+                  ! {svc.requests} ({svc.warning})
+                </span>
+                <div style={{ width: 40, height: 4, backgroundColor: T.border, borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(svc.requests / maxRequests) * 100}%`, backgroundColor: "#f59e0b", borderRadius: 2 }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel: graph canvas */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 16px", fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted }}>
+          <span>Based on <span style={{ color: T.fg, fontWeight: 600 }}>1000</span> traces</span>
+          <span>Latency</span>
+          <span style={{ fontWeight: 700, color: T.fg }}>avg</span>
+        </div>
+
+        {/* SVG canvas for edges */}
+        <svg style={{ position: "absolute", top: 36, left: 0, width: canvasW, height: canvasH, pointerEvents: "none" }}>
+          <defs>
+            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#f59e0b" />
+            </marker>
+          </defs>
+          {DEP_MAP_EDGES.map((edge, i) => {
+            const fromPos = DEP_MAP_POSITIONS[edge.from];
+            const toPos = DEP_MAP_POSITIONS[edge.to];
+            if (!fromPos || !toPos) return null;
+            const x1 = (fromPos.x / 100) * canvasW + nodeW / 2;
+            const y1 = (fromPos.y / 100) * canvasH + nodeH / 2;
+            const x2 = (toPos.x / 100) * canvasW + nodeW / 2;
+            const y2 = (toPos.y / 100) * canvasH + nodeH / 2;
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const offsetStart = 40;
+            const offsetEnd = 50;
+            const sx = x1 + (dx / len) * offsetStart;
+            const sy = y1 + (dy / len) * offsetStart;
+            const ex = x2 - (dx / len) * offsetEnd;
+            const ey = y2 - (dy / len) * offsetEnd;
+            const mx = (sx + ex) / 2;
+            const my = (sy + ey) / 2;
+            const isHighlighted = hoveredNode === edge.from || hoveredNode === edge.to;
+            return (
+              <g key={i}>
+                <line x1={sx} y1={sy} x2={ex} y2={ey}
+                  stroke={isHighlighted ? "#f59e0b" : "#4a4a4e"}
+                  strokeWidth={isHighlighted ? 2 : 1}
+                  markerEnd="url(#arrowhead)"
+                  opacity={isHighlighted ? 1 : 0.6}
+                />
+                <rect x={mx - 28} y={my - 8} width={56} height={16} rx={3}
+                  fill={T.card} stroke={T.border} strokeWidth={0.5}
+                />
+                <text x={mx} y={my + 3} textAnchor="middle"
+                  fill={T.fgMuted} fontSize={8} fontFamily={T.font}
+                >
+                  {edge.latency}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Nodes */}
+        {DEP_MAP_SERVICES.map(svc => {
+          const pos = DEP_MAP_POSITIONS[svc.id];
+          if (!pos) return null;
+          const isHovered = hoveredNode === svc.id;
+          const isConnected = hoveredNode && DEP_MAP_EDGES.some(e =>
+            (e.from === hoveredNode && e.to === svc.id) || (e.to === hoveredNode && e.from === svc.id)
+          );
+          const dimmed = hoveredNode && !isHovered && !isConnected && hoveredNode !== svc.id;
+          return (
+            <div
+              key={svc.id}
+              style={{
+                position: "absolute",
+                left: (pos.x / 100) * canvasW,
+                top: 36 + (pos.y / 100) * canvasH,
+                width: nodeW,
+                height: nodeH,
+                backgroundColor: T.card,
+                border: `1px solid ${isHovered ? "#f59e0b" : T.border}`,
+                borderRadius: T.radius,
+                padding: "6px 10px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: "pointer",
+                opacity: dimmed ? 0.35 : 1,
+                transition: "opacity 150ms, border-color 150ms",
+                zIndex: isHovered ? 10 : 1,
+              }}
+              onMouseEnter={() => setHoveredNode(svc.id)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
+              <span style={{ width: 24, height: 24, borderRadius: 4, backgroundColor: svc.color, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", flexShrink: 0 }}>
+                {svc.icon.slice(0, 2)}
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 600, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {svc.name}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: T.font, fontSize: 9, color: T.fgMuted }}>
+                  <span>{svc.type}</span>
+                  {svc.requests > 0 && (
+                    <>
+                      <span>.</span>
+                      <span>{svc.requests} Requests</span>
+                      {svc.warning && <span style={{ color: "#f59e0b" }}>! {svc.warning}</span>}
+                    </>
+                  )}
+                  {svc.errors > 0 && <span style={{ color: "#ef4444" }}>x {svc.errors}</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TabPlaceholder({ tab }) {
+  return (
+    <div style={{ padding: "40px 24px", textAlign: "center", fontFamily: T.font, fontSize: T.textP, color: T.fgMuted }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: T.textH3, color: T.fg }}>{tab} View</span>
+        <span>Aggregated <span style={{ color: T.fg }}>{tab.toLowerCase()}</span> data will appear here.</span>
+      </div>
+    </div>
+  );
+}
+
+function TableIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="3" rx="1" fill="currentColor" opacity="0.4"/><rect x="1" y="5.5" width="5" height="2.5" rx="0.5" fill="currentColor"/><rect x="8" y="5.5" width="5" height="2.5" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="1" y="9.5" width="5" height="2.5" rx="0.5" fill="currentColor"/><rect x="8" y="9.5" width="5" height="2.5" rx="0.5" fill="currentColor" opacity="0.5"/></svg>; }
+function HBarVizIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="11" height="3" rx="1" fill="currentColor"/><rect x="1" y="5.5" width="8" height="3" rx="1" fill="currentColor" opacity="0.7"/><rect x="1" y="10" width="5" height="3" rx="1" fill="currentColor" opacity="0.4"/></svg>; }
+function DonutIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5A5.5 5.5 0 1 1 1.5 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M7 1.5A5.5 5.5 0 0 0 1.5 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.3"/></svg>; }
+function TreemapIcon() { return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="7" height="8" rx="1" fill="currentColor"/><rect x="9" y="1" width="4" height="4" rx="1" fill="currentColor" opacity="0.6"/><rect x="9" y="6" width="4" height="3" rx="1" fill="currentColor" opacity="0.4"/><rect x="1" y="10" width="4" height="3" rx="1" fill="currentColor" opacity="0.5"/><rect x="6" y="10" width="3" height="3" rx="1" fill="currentColor" opacity="0.3"/><rect x="10" y="10" width="3" height="3" rx="1" fill="currentColor" opacity="0.2"/></svg>; }
+
+const OVERVIEW_VIZ_TYPES = [
+  { id: "table", label: "Table", Icon: TableIcon },
+  { id: "hbar", label: "Horizontal bar", Icon: HBarVizIcon },
+  { id: "donut", label: "Donut chart", Icon: DonutIcon },
+  { id: "treemap", label: "Treemap", Icon: TreemapIcon },
+];
+
+function OverviewHBar({ rows, groupBys, aggregations }) {
+  const { hoveredLabel, setHoveredLabel } = useQuery();
+  const aggLabels = { Count: "count", "Count Distinct": "count distinct", Sum: "sum (bytes)", Min: "min", Max: "max" };
+  const agg = aggregations[0];
+  const data = useMemo(() => [...rows].sort((a, b) => b.value - a.value).slice(0, 12).map(r => ({ name: r.label, value: r.value, color: r.color })), [rows]);
+  const maxVal = Math.max(...data.map(d => d.value), 1);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+        {data.map((d, i) => {
+          const isHovered = hoveredLabel === d.name;
+          const isDimmed = hoveredLabel && !isHovered;
+          return (
+            <div key={i}
+              onMouseEnter={() => setHoveredLabel(d.name)}
+              onMouseLeave={() => setHoveredLabel(null)}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0", cursor: "pointer", opacity: isDimmed ? 0.3 : 1, transition: "opacity 150ms" }}>
+              <span style={{ width: 120, fontFamily: T.font, fontSize: T.textLabel, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0 }}>{d.name}</span>
+              <div style={{ flex: 1, height: 20, backgroundColor: T.muted, borderRadius: 3, overflow: "hidden", position: "relative" }}>
+                <div style={{ height: "100%", width: `${(d.value / maxVal) * 100}%`, backgroundColor: d.color, borderRadius: 3, transition: "width 300ms", opacity: isHovered ? 1 : 0.8 }} />
+              </div>
+              <span style={{ fontFamily: T.mono, fontSize: T.textLabel, color: T.fgMuted, minWidth: 50, textAlign: "right", flexShrink: 0 }}>{fmtNum(d.value)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>
+        {rows.length} results . {aggLabels[agg] ?? agg}
+      </div>
+    </div>
+  );
+}
+
+function OverviewDonut({ rows, aggregations }) {
+  const { hoveredLabel, setHoveredLabel } = useQuery();
+  const aggLabels = { Count: "count", "Count Distinct": "count distinct", Sum: "sum (bytes)", Min: "min", Max: "max" };
+  const agg = aggregations[0];
+  const data = useMemo(() => [...rows].sort((a, b) => b.value - a.value).slice(0, 8).map(r => ({ name: r.label, value: r.value, color: r.color })), [rows]);
+  const total = data.reduce((s, d) => s + d.value, 0);
+
+  const size = 260;
+  const cx = size / 2, cy = size / 2;
+  const outerR = 115, innerR = 68, hoverGrow = 6;
+
+  const arcs = useMemo(() => {
+    const result = [];
+    let angle = -Math.PI / 2;
+    data.forEach(d => {
+      const sweep = total > 0 ? (d.value / total) * Math.PI * 2 : 0;
+      const startAngle = angle;
+      const endAngle = angle + sweep;
+      const midAngle = startAngle + sweep / 2;
+      result.push({ ...d, startAngle, endAngle, midAngle, sweep });
+      angle = endAngle;
+    });
+    return result;
+  }, [data, total]);
+
+  const describeArc = (cxv, cyv, r1, r2, start, end) => {
+    const gap = 0.01;
+    const s = start + gap;
+    const e = end - gap;
+    if (e <= s) return "";
+    const large = (e - s) > Math.PI ? 1 : 0;
+    const x1o = cxv + r2 * Math.cos(s), y1o = cyv + r2 * Math.sin(s);
+    const x2o = cxv + r2 * Math.cos(e), y2o = cyv + r2 * Math.sin(e);
+    const x1i = cxv + r1 * Math.cos(e), y1i = cyv + r1 * Math.sin(e);
+    const x2i = cxv + r1 * Math.cos(s), y2i = cyv + r1 * Math.sin(s);
+    return `M ${x1o} ${y1o} A ${r2} ${r2} 0 ${large} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${r1} ${r1} 0 ${large} 0 ${x2i} ${y2i} Z`;
+  };
+
+  return (
+    <div style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      {/* Donut chart */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0, padding: 16 }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
+          {arcs.map((arc, i) => {
+            const isHovered = hoveredLabel === arc.name;
+            const isDimmed = hoveredLabel && !isHovered;
+            const r2 = isHovered ? outerR + hoverGrow : outerR;
+            const r1 = isHovered ? innerR - 2 : innerR;
+            const pct = total > 0 ? ((arc.value / total) * 100).toFixed(1) : "0";
+            const labelR = (outerR + innerR) / 2;
+            const lx = cx + labelR * Math.cos(arc.midAngle);
+            const ly = cy + labelR * Math.sin(arc.midAngle);
+            const showSliceLabel = arc.sweep > 0.3;
+            const showExtLabel = !showSliceLabel && arc.sweep > 0.12;
+            const extR = outerR + 22;
+            const elx = cx + extR * Math.cos(arc.midAngle);
+            const ely = cy + extR * Math.sin(arc.midAngle);
+
+            return (
+              <g key={i}
+                onMouseEnter={() => setHoveredLabel(arc.name)}
+                onMouseLeave={() => setHoveredLabel(null)}
+                style={{ cursor: "pointer" }}>
+                <path
+                  d={describeArc(cx, cy, r1, r2, arc.startAngle, arc.endAngle)}
+                  fill={arc.color}
+                  fillOpacity={isDimmed ? 0.15 : 1}
+                  style={{ transition: "fill-opacity 150ms, d 150ms" }}
+                />
+                {showSliceLabel && (
+                  <>
+                    <text x={lx} y={ly - 5} textAnchor="middle" fill="#fff" fontSize={10} fontFamily={T.font} fontWeight={600} style={{ pointerEvents: "none" }}>
+                      {arc.name.length > 14 ? arc.name.slice(0, 12) + "..." : arc.name}
+                    </text>
+                    <text x={lx} y={ly + 7} textAnchor="middle" fill="rgba(255,255,255,0.8)" fontSize={9} fontFamily={T.mono} style={{ pointerEvents: "none" }}>
+                      {pct}%
+                    </text>
+                  </>
+                )}
+                {showExtLabel && (
+                  <text x={elx} y={ely} textAnchor={arc.midAngle > -Math.PI / 2 && arc.midAngle < Math.PI / 2 ? "start" : "end"} fill={T.fgMuted} fontSize={9} fontFamily={T.font} style={{ pointerEvents: "none" }} dominantBaseline="middle">
+                    {arc.name.length > 16 ? arc.name.slice(0, 14) + "..." : arc.name} ({pct}%)
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          {/* Center label */}
+          <circle cx={cx} cy={cy} r={innerR - 4} fill={T.card} />
+          <text x={cx} y={cy - 8} textAnchor="middle" fill={T.fg} fontSize={14} fontFamily={T.font} fontWeight={700}>
+            {hoveredLabel
+              ? (data.find(d => d.name === hoveredLabel)?.name.slice(0, 12) || "")
+              : fmtNum(total)}
+          </text>
+          <text x={cx} y={cy + 8} textAnchor="middle" fill={T.fgMuted} fontSize={10} fontFamily={T.font}>
+            {hoveredLabel
+              ? `${total > 0 ? ((data.find(d => d.name === hoveredLabel)?.value ?? 0) / total * 100).toFixed(1) : 0}%`
+              : aggLabels[agg] ?? agg}
+          </text>
+        </svg>
+      </div>
+      {/* Legend */}
+      <div style={{ width: 200, flexShrink: 0, borderLeft: `1px solid ${T.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", borderBottom: `1px solid ${T.border}` }}>
+          <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 600, color: T.fgMuted }}>Name</span>
+          <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 600, color: T.fgMuted }}>Value</span>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {data.map((d, i) => {
+            const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
+            const isHovered = hoveredLabel === d.name;
+            const isDimmed = hoveredLabel && !isHovered;
+            return (
+              <div key={i}
+                onMouseEnter={() => setHoveredLabel(d.name)}
+                onMouseLeave={() => setHoveredLabel(null)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", gap: 6, borderBottom: `1px solid ${T.border}`, cursor: "pointer", backgroundColor: isHovered ? T.muted : "transparent", opacity: isDimmed ? 0.35 : 1, transition: "opacity 150ms, background-color 100ms" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: d.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                  <span style={{ fontFamily: T.mono, fontSize: T.textLabel, color: T.fg }}>{fmtNum(d.value)}</span>
+                  <span style={{ fontFamily: T.mono, fontSize: 9, color: T.fgMuted }}>{pct}%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ padding: "8px 10px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0, display: "flex", justifyContent: "space-between" }}>
+          <span>Total</span>
+          <span style={{ fontFamily: T.mono, color: T.fg, fontWeight: 600 }}>{fmtNum(total)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function computeTreemapLayout(data, x, y, w, h) {
+  if (!data.length || w <= 0 || h <= 0) return [];
+  const total = data.reduce((s, d) => s + d.size, 0);
+  if (total <= 0) return [];
+  const rects = [];
+  let cx = x, cy = y, cw = w, ch = h;
+  let remaining = [...data];
+
+  while (remaining.length > 0) {
+    const isWide = cw >= ch;
+    const side = isWide ? ch : cw;
+    let best = [remaining[0]];
+    let bestRatio = Infinity;
+
+    for (let i = 1; i <= remaining.length; i++) {
+      const slice = remaining.slice(0, i);
+      const sliceTotal = slice.reduce((s, d) => s + d.size, 0);
+      const sliceLen = (sliceTotal / total) * (cw * ch) / side;
+      const worstRatio = Math.max(...slice.map(d => {
+        const dimA = ((d.size / sliceTotal) * side);
+        const dimB = sliceLen;
+        return Math.max(dimB / dimA, dimA / dimB);
+      }));
+      if (worstRatio <= bestRatio) { bestRatio = worstRatio; best = slice; }
+      else break;
+    }
+
+    const sliceTotal = best.reduce((s, d) => s + d.size, 0);
+    const sliceLen = total > 0 ? (sliceTotal / total) * (isWide ? cw : ch) : 0;
+    let offset = 0;
+    for (const item of best) {
+      const frac = sliceTotal > 0 ? item.size / sliceTotal : 0;
+      const itemLen = frac * side;
+      if (isWide) {
+        rects.push({ ...item, x: cx, y: cy + offset, w: sliceLen, h: itemLen });
+      } else {
+        rects.push({ ...item, x: cx + offset, y: cy, w: itemLen, h: sliceLen });
+      }
+      offset += itemLen;
+    }
+
+    if (isWide) { cx += sliceLen; cw -= sliceLen; } else { cy += sliceLen; ch -= sliceLen; }
+    remaining = remaining.slice(best.length);
+  }
+  return rects;
+}
+
+function OverviewTreemap({ rows, aggregations }) {
+  const { hoveredLabel, setHoveredLabel } = useQuery();
+  const aggLabels = { Count: "count", "Count Distinct": "count distinct", Sum: "sum (bytes)", Min: "min", Max: "max" };
+  const agg = aggregations[0];
+  const data = useMemo(() => [...rows].sort((a, b) => b.value - a.value).slice(0, 16).map(r => ({ name: r.label, size: r.value, color: r.color })), [rows]);
+  const containerRef = useRef(null);
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+
+  const setRef = useCallback(el => {
+    containerRef.current = el;
+    if (el) setDims({ w: el.offsetWidth, h: el.offsetHeight });
+  }, []);
+
+  const rects = useMemo(() => {
+    if (dims.w <= 0 || dims.h <= 0) return [];
+    return computeTreemapLayout(data, 0, 0, dims.w, dims.h);
+  }, [data, dims]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div ref={setRef} style={{ flex: 1, padding: 4, minHeight: 0, position: "relative" }}>
+        <svg width={dims.w} height={dims.h} style={{ display: "block" }}>
+          {rects.map((r, i) => {
+            const isHovered = hoveredLabel === r.name;
+            const isDimmed = hoveredLabel && !isHovered;
+            const pad = 2;
+            return (
+              <g key={i}
+                onMouseEnter={() => setHoveredLabel(r.name)}
+                onMouseLeave={() => setHoveredLabel(null)}
+                style={{ cursor: "pointer" }}>
+                <rect
+                  x={r.x + pad} y={r.y + pad}
+                  width={Math.max(0, r.w - pad * 2)} height={Math.max(0, r.h - pad * 2)}
+                  rx={4} fill={r.color || T.primary}
+                  fillOpacity={isDimmed ? 0.15 : isHovered ? 1 : 0.75}
+                  style={{ transition: "fill-opacity 150ms" }}
+                />
+                {r.w > 50 && r.h > 26 && (
+                  <text x={r.x + pad + 6} y={r.y + pad + 16} fill="#fff" fontSize={11} fontFamily={T.font} fontWeight={600} style={{ pointerEvents: "none" }}>
+                    {r.name.length > Math.floor((r.w - 16) / 7) ? r.name.slice(0, Math.floor((r.w - 16) / 7)) + "..." : r.name}
+                  </text>
+                )}
+                {r.w > 55 && r.h > 40 && (
+                  <text x={r.x + pad + 6} y={r.y + pad + 30} fill="rgba(255,255,255,0.65)" fontSize={10} fontFamily={T.mono} style={{ pointerEvents: "none" }}>
+                    {fmtNum(r.size)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>
+        {rows.length} results . {aggLabels[agg] ?? agg}
+      </div>
+    </div>
+  );
+}
+
+const SPANS_TABS = ["Overview", "Spans", "Traces", "Flows"];
+const SPANS_TAB_COUNTS = { Overview: null, Spans: "38.91M", Traces: "1.2M", Flows: "847" };
+const LOGS_TABS = ["Overview", "Logs", "Template"];
+const LOGS_TAB_COUNTS = { Overview: null, Logs: "36.97M", Template: "986" };
+
+function LogsTable({ groupBys }) {
+  const { menu, onCellContext, closeMenu, onAction } = useCellMenu();
+  const SEVERITIES = ["Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Debug", "Debug", "Warning", "Error", "Info", "Debug"];
+  const SEV_COLORS = { Info: { bg: "rgba(96,165,250,0.15)", fg: "#60a5fa" }, Debug: { bg: "rgba(156,163,175,0.15)", fg: "#9ca3af" }, Warning: { bg: "rgba(251,191,36,0.15)", fg: "#fbbf24" }, Error: { bg: "rgba(248,113,113,0.15)", fg: "#f87171" } };
+  const SERVICES = ["currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "currencyservice", "shippingservice", "shippingservice", "shippingservice", "shippingservice", "shippingservice", "shippingservice"];
+  const CONTENTS = [
+    'conversion request successful: {"units":89,"nanos":990000000,"cur...',
+    'Getting supported currencies...',
+    'conversion request successful: {"units":19,"nanos":990000000,"cur...',
+    'conversion request successful: {"units":18,"nanos":990000000,"cur...',
+    'conversion request successful: {"units":109,"nanos":990000000,"c...',
+    'conversion request successful: {"units":89,"nanos":990000000,"cur...',
+    'conversion request successful: {"units":24,"nanos":990000000,"cur...',
+    'conversion request successful: {"units":18,"nanos":990000000,"cur...',
+    'conversion request successful: {"units":18,"nanos":490000000,"cur...',
+    'conversion request successful: {"units":5,"nanos":490000000,"curr...',
+    'conversion request successful: {"units":8,"nanos":990000000,"curr...',
+    'Getting supported currencies...',
+    '{"file":"/src/main.go:136","func":"main.(*server).GetQuote","mes...',
+    '{"file":"/src/main.go:155","func":"main.(*server).GetQuote","mes...',
+    '{"file":"/src/main.go:151","func":"main.(*server).GetQuote","mes...',
+    '{"file":"/src/main.go:145","func":"main.(*server).GetQuote","mes...',
+    'conversion request successful: {"units":18,"nanos":490000000,"cur...',
+    '{"file":"/src/main.go:155","func":"main.(*server).GetQuote","mes...',
+  ];
+  const SOURCES = [
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    '@timestamp : 2026-04-11T18:00:00.292Z @version : 1 beat.hostna...',
+    '@timestamp : 2026-04-11T18:00:00.293Z @version : 1 beat.hostna...',
+    '@timestamp : 2026-04-11T18:00:00.293Z @version : 1 beat.hostna...',
+    '@timestamp : 2026-04-11T18:00:00.293Z @version : 1 beat.hostna...',
+    'attributes.log_file_path :/var/log/pods/default_currencyservice...',
+    '@timestamp : 2026-04-11T18:00:00.293Z @version : 1 beat.hostna...',
+  ];
+
+  const rows = Array.from({ length: 18 }, (_, i) => ({
+    id: i + 1, severity: SEVERITIES[i], ts: "11/04/2026 21:00:00",
+    content: CONTENTS[i], source: SOURCES[i],
+    application: "default", subsystem: SERVICES[i],
+  }));
+
+  const thStyle = { padding: "7px 10px", textAlign: "left", color: T.fgMuted, fontWeight: 600, fontSize: T.textLabel, whiteSpace: "nowrap", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, backgroundColor: T.muted, fontFamily: T.font, position: "sticky", top: 0, zIndex: 1 };
+  const tdStyle = { padding: "6px 10px", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: T.textLabel, color: T.fg, whiteSpace: "nowrap" };
+
+  const renderGroupByValue = (field, value) => {
+    if (field === "serviceName") {
+      const colors = { currencyservice: "#f59e0b", shippingservice: "#3d6cb9", frontend: "#00a3e0", cartservice: "#029449", checkoutservice: "#ef4444", paymentservice: "#8b5cf6" };
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: colors[value] ?? T.fgMuted, flexShrink: 0 }} />
+          <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg }}>{value}</span>
+        </div>
+      );
+    }
+    if (field === "level") {
+      const c = LEVEL_COLORS[value] ?? { bg: "rgba(107,114,128,0.15)", fg: "#9ca3af" };
+      return <span style={{ display: "inline-flex", alignItems: "center", backgroundColor: c.bg, color: c.fg, borderRadius: 3, padding: "1px 6px", fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 600 }}>{value}</span>;
+    }
+    return <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg }}>{value}</span>;
+  };
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 + groupBys.length * 130 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thStyle, width: 36 }}>#</th>
+              <th style={{ ...thStyle, width: 150 }}>Timestamp</th>
+              {groupBys.map(gb => (
+                <th key={gb} style={{ ...thStyle, minWidth: 100 }}>{gb}</th>
+              ))}
+              <th style={{ ...thStyle, minWidth: 300 }}>Content</th>
+              <th style={{ ...thStyle, minWidth: 250 }}>Source {'{}'}</th>
+              <th style={thStyle}>Application</th>
+              <th style={{ ...thStyle, borderRight: "none" }}>Subsystem</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => {
+              const sc = SEV_COLORS[row.severity] ?? SEV_COLORS.Info;
+              return (
+              <tr key={row.id} style={{ cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <td style={{ ...tdStyle, textAlign: "center", color: T.fgMuted }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
+                    <ChevronRight size={10} color={T.fgMuted} />
+                    <span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: sc.fg, opacity: 0.7, flexShrink: 0 }} />
+                    <span>{row.id}</span>
+                  </div>
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.ts)}>{row.ts}</td>
+                {groupBys.map(gb => {
+                  const val = MOCK_GROUP_BY_VALUES[gb]?.[row.id - 1] ?? "-";
+                  return (
+                    <td key={gb} style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, val)}>
+                      {renderGroupByValue(gb, val)}
+                    </td>
+                  );
+                })}
+                <td style={{ ...tdStyle, maxWidth: 400, overflow: "hidden", textOverflow: "ellipsis" }} onContextMenu={e => onCellContext(e, row.content)}>{row.content}</td>
+                <td style={{ ...tdStyle, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", color: T.fgMuted }} onContextMenu={e => onCellContext(e, row.source)}>{row.source}</td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.application)}>{row.application}</td>
+                <td style={{ ...tdStyle, borderRight: "none" }} onContextMenu={e => onCellContext(e, row.subsystem)}>{row.subsystem}</td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>
+        {rows.length} logs
+      </div>
+      {menu && <CellContextMenu x={menu.x} y={menu.y} cellValue={menu.value} onClose={closeMenu} onAction={onAction} />}
+    </div>
+  );
+}
+
+function TemplatesTable({ groupBys }) {
+  const { menu, onCellContext, closeMenu, onAction } = useCellMenu();
+  const rows = [
+    { id: 1, count: "4.3M", pct: "11.79%", severity: "Info", app: "currencyservice", subsystem: "default", template: 'conversion request successful : { " units " : 109 , " nanos " : 990000000 , " currency_code " : " USD " }' },
+    { id: 2, count: "3.1M", pct: "8.38%", severity: "Debug", app: "frontend", subsystem: "default", template: 'attributes.log_file_path :/var/log/pods/default_frontend-69d989d8dd-7s44j_b722a7ab-fa18-4292-a1d0-924f87d8810b/server...' },
+    { id: 3, count: "1.7M", pct: "4.73%", severity: "Debug", app: "currencyservice", subsystem: "default", template: '{ " level " : 30 , " time " : 1775996760413 , " pid " : 1 , " hostname " : " currencyservice-5fcccf7b7c-5ztfw " ,' },
+    { id: 4, count: "1.3M", pct: "3.44%", severity: "Debug", app: "cartservice", subsystem: "default", template: '{ " Timestamp " : " 2026-04-12T12 : 26 : 00Z " , " EventId " : 0 , " LogLevel " : " Information " , " Category " ' },
+    { id: 5, count: "1.2M", pct: "3.14%", severity: "Debug", app: "frontend", subsystem: "default", template: 'attributes.log_file_path :/var/log/pods/default_frontend-69d989d8dd-7s44j_b722a7ab-fa18-4292-a1d0-924f87d8810b/server...' },
+    { id: 6, count: "1.1M", pct: "3.08%", severity: "Info", app: "cartservice", subsystem: "default", template: 'Category : cartservice.cartstore.RedisCartStore EventId : 0 LogLevel : Information Message : GetCartAsync called with ...' },
+    { id: 7, count: "1.1M", pct: "3.00%", severity: "Info", app: "currencyservice", subsystem: "default", template: 'Getting supported currencies...' },
+    { id: 8, count: "982K", pct: "2.69%", severity: "Warning", app: "productcatalogservice", subsystem: "default", template: 'warning: could not parse product catalog entry, skipping malformed record in batch import pipeline ...' },
+    { id: 9, count: "871K", pct: "2.38%", severity: "Info", app: "recommendationservice", subsystem: "default", template: 'ListRecommendations handler called with productIds=[ * ] returning topN=5 filtered results from catalog...' },
+    { id: 10, count: "743K", pct: "2.03%", severity: "Error", app: "checkoutservice", subsystem: "default", template: 'failed to charge card: rpc error: code = Unavailable desc = connection refused to paymentservice:50051...' },
+    { id: 11, count: "651K", pct: "1.78%", severity: "Debug", app: "shippingservice", subsystem: "default", template: '{ "file" : "/src/main.go:136" , "func" : "main.(*server).GetQuote" , "message" : "getting quote" , ...' },
+    { id: 12, count: "590K", pct: "1.61%", severity: "Info", app: "adservice", subsystem: "default", template: 'AdService returning * ads for context keys=[ * ] with targeting score threshold=0.5 and max_results=2' },
+    { id: 13, count: "523K", pct: "1.43%", severity: "Error", app: "paymentservice", subsystem: "default", template: 'PaymentService Charge failed: credit card expired { card_type: * , expiration: * , last_four: * }' },
+    { id: 14, count: "481K", pct: "1.32%", severity: "Debug", app: "emailservice", subsystem: "default", template: 'sending email confirmation to * for order * containing * items with total amount * ...' },
+    { id: 15, count: "412K", pct: "1.13%", severity: "Warning", app: "frontend", subsystem: "default", template: 'session token nearing expiration for user_id=* , remaining_ttl=*s , triggering silent refresh flow...' },
+    { id: 16, count: "387K", pct: "1.06%", severity: "Info", app: "loadgenerator", subsystem: "default", template: 'load generator cycle complete: sent * requests in *ms with * errors ( *% error rate ) across * endpoints' },
+    { id: 17, count: "291K", pct: "0.80%", severity: "Error", app: "cartservice", subsystem: "default", template: 'Redis connection pool exhausted: max_connections=50 active=50 waiting=12 timeout after 5000ms...' },
+    { id: 18, count: "245K", pct: "0.67%", severity: "Debug", app: "productcatalogservice", subsystem: "default", template: 'catalog search completed: query=* matched=* products in *ms from index shard * of * total shards...' },
+  ];
+  const SEV_COLORS = { Info: { bg: "rgba(96,165,250,0.15)", fg: "#60a5fa" }, Debug: { bg: "rgba(156,163,175,0.15)", fg: "#9ca3af" }, Warning: { bg: "rgba(251,191,36,0.15)", fg: "#fbbf24" }, Error: { bg: "rgba(248,113,113,0.15)", fg: "#f87171" } };
+  const thStyle = { padding: "7px 10px", textAlign: "left", color: T.fgMuted, fontWeight: 600, fontSize: T.textLabel, whiteSpace: "nowrap", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, backgroundColor: T.muted, fontFamily: T.font, position: "sticky", top: 0, zIndex: 1 };
+  const tdStyle = { padding: "6px 10px", borderBottom: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, fontFamily: T.mono, fontSize: T.textLabel, color: T.fg, whiteSpace: "nowrap" };
+
+  const renderGroupByValue = (field, value) => {
+    if (field === "serviceName") {
+      const colors = { currencyservice: "#f59e0b", shippingservice: "#3d6cb9", frontend: "#00a3e0", cartservice: "#029449", checkoutservice: "#ef4444", paymentservice: "#8b5cf6", productcatalogservice: "#f97316", recommendationservice: "#22d3ee", adservice: "#a78bfa", emailservice: "#ec4899", loadgenerator: "#6b7280" };
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: colors[value] ?? T.fgMuted, flexShrink: 0 }} />
+          <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg }}>{value}</span>
+        </div>
+      );
+    }
+    if (field === "level") {
+      const c = LEVEL_COLORS[value] ?? { bg: "rgba(107,114,128,0.15)", fg: "#9ca3af" };
+      return <span style={{ display: "inline-flex", alignItems: "center", backgroundColor: c.bg, color: c.fg, borderRadius: 3, padding: "1px 6px", fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 600 }}>{value}</span>;
+    }
+    return <span style={{ fontFamily: T.font, fontSize: T.textLabel, color: T.fg }}>{value}</span>;
+  };
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 + groupBys.length * 130 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thStyle, width: 36 }}>#</th>
+              <th style={{ ...thStyle, width: 130 }}>Count</th>
+              <th style={thStyle}>Severity</th>
+              {groupBys.map(gb => (
+                <th key={gb} style={{ ...thStyle, minWidth: 100 }}>{gb}</th>
+              ))}
+              <th style={thStyle}>Application</th>
+              <th style={thStyle}>Subsystem</th>
+              <th style={{ ...thStyle, minWidth: 400, borderRight: "none" }}>Template</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => {
+              const sc = SEV_COLORS[row.severity] ?? SEV_COLORS.Info;
+              return (
+              <tr key={row.id} style={{ cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <td style={{ ...tdStyle, textAlign: "center", color: T.fgMuted }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
+                    <ChevronRight size={10} color={T.fgMuted} />
+                    <span style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: sc.fg, opacity: 0.7, flexShrink: 0 }} />
+                    <span>{row.id}</span>
+                  </div>
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.count)}>
+                  <span style={{ fontWeight: 600 }}>{row.count}</span>
+                  <span style={{ color: T.fgMuted, marginLeft: 6 }}>({row.pct})</span>
+                </td>
+                <td style={tdStyle} onContextMenu={e => onCellContext(e, row.severity)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ width: 2, height: 14, borderRadius: 1, backgroundColor: sc.fg, flexShrink: 0 }} />
+                    <span>{row.severity}</span>
+                  </div>
+                </td>
+                {groupBys.map(gb => {
+                  const val = MOCK_GROUP_BY_VALUES[gb]?.[row.id - 1] ?? "-";
+                  return (
+                    <td key={gb} style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, val)}>
+                      {renderGroupByValue(gb, val)}
+                    </td>
+                  );
+                })}
+                <td style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, row.app)}>{row.app}</td>
+                <td style={{ ...tdStyle, fontFamily: T.font }} onContextMenu={e => onCellContext(e, row.subsystem)}>{row.subsystem}</td>
+                <td style={{ ...tdStyle, borderRight: "none", maxWidth: 500, overflow: "hidden", textOverflow: "ellipsis" }} onContextMenu={e => onCellContext(e, row.template)}>{row.template}</td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted, flexShrink: 0 }}>
+        {rows.length} templates
+      </div>
+      {menu && <CellContextMenu x={menu.x} y={menu.y} cellValue={menu.value} onClose={closeMenu} onAction={onAction} />}
+    </div>
+  );
+}
+
+function DrilldownTabs() {
+  const { dataType, tableData, groupBys, aggregations, initialFocusTab } = useQuery();
+  const isLogs = dataType === "Logs";
+  const tabs = isLogs ? LOGS_TABS : SPANS_TABS;
+  const tabCounts = isLogs ? LOGS_TAB_COUNTS : SPANS_TAB_COUNTS;
+
+  const [activeTab, setActiveTab] = useState(initialFocusTab || "Overview");
+  const [overviewViz, setOverviewViz] = useState("table");
+  const [vizDropdownOpen, setVizDropdownOpen] = useState(false);
+
+  const activeVizType = OVERVIEW_VIZ_TYPES.find(v => v.id === overviewViz);
+
+  const showExportManage = isLogs ? (activeTab === "Logs") : (activeTab === "Spans" || activeTab === "Traces");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", backgroundColor: T.card, borderRadius: `${T.radius}px ${T.radius}px 0 0`, border: `1px solid ${T.border}`, borderBottom: "none", padding: "0 4px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "flex-end" }}>
+          {tabs.map(tab => {
+            const isActive = activeTab === tab;
+            const count = tab === "Overview" ? tableData.length : tabCounts[tab];
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab)} style={{
+                padding: "9px 16px", border: "none", background: "transparent", cursor: "pointer",
+                fontFamily: T.font, fontSize: T.textP,
+                fontWeight: isActive ? 600 : 400,
+                color: isActive ? T.primary : T.fgMuted,
+                borderBottom: isActive ? `2px solid ${T.primary}` : "2px solid transparent",
+                marginBottom: -1, outline: "none", transition: "color 120ms", userSelect: "none",
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+                {tab}
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  backgroundColor: isActive ? T.primaryBg : T.muted,
+                  color: isActive ? T.primary : T.fgMuted,
+                  borderRadius: 4, padding: "1px 6px",
+                  fontFamily: T.mono, fontSize: T.textLabel, fontWeight: 400, lineHeight: "16px",
+                  whiteSpace: "nowrap", transition: "background-color 120ms, color 120ms",
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px" }}>
+          {activeTab === "Overview" && (
+            <div style={{ position: "relative" }}
+              onMouseLeave={() => setVizDropdownOpen(false)}>
+              <div onClick={() => setVizDropdownOpen(p => !p)}
+                style={{ display: "flex", alignItems: "center", gap: 5, height: 26, padding: "0 8px", borderRadius: 4, cursor: "pointer", userSelect: "none", border: `1px solid ${vizDropdownOpen ? T.primary : T.border}`, backgroundColor: vizDropdownOpen ? "rgba(42,169,104,0.06)" : "transparent", transition: "border-color 120ms" }}>
+                <span style={{ color: T.fgMuted, fontSize: T.textLabel, fontFamily: T.font }}>Visualize as</span>
+                {activeVizType && <activeVizType.Icon />}
+                <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 600, color: T.fg }}>{activeVizType?.label}</span>
+                <ChevronDown size={10} color={T.fgMuted} style={{ transform: vizDropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 150ms" }} />
+              </div>
+              {vizDropdownOpen && (
+                <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 50, paddingTop: 2 }}>
+                  <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", minWidth: 170, padding: "4px 0" }}>
+                  {OVERVIEW_VIZ_TYPES.map(vt => {
+                    const isA = vt.id === overviewViz;
+                    return (
+                      <div key={vt.id} onClick={() => { setOverviewViz(vt.id); setVizDropdownOpen(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", cursor: "pointer", backgroundColor: isA ? "rgba(42,169,104,0.10)" : "transparent", color: isA ? T.primary : T.fg, fontFamily: T.font, fontSize: T.textP, fontWeight: isA ? 600 : 400, transition: "background-color 80ms" }}
+                        onMouseEnter={e => { if (!isA) e.currentTarget.style.backgroundColor = T.muted; }}
+                        onMouseLeave={e => { if (!isA) e.currentTarget.style.backgroundColor = isA ? "rgba(42,169,104,0.10)" : "transparent"; }}>
+                        <vt.Icon /><span>{vt.label}</span>
+                      </div>
+                    );
+                  })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {showExportManage && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, height: 26, padding: "0 8px", borderRadius: 4, cursor: "pointer", userSelect: "none", border: `1px solid ${T.border}`, transition: "background-color 80ms" }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <Download size={12} color={T.fgMuted} />
+                <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 500, color: T.fg }}>Export</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, height: 26, padding: "0 8px", borderRadius: 4, cursor: "pointer", userSelect: "none", border: `1px solid ${T.border}`, transition: "background-color 80ms" }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                <SlidersHorizontal size={12} color={T.fgMuted} />
+                <span style={{ fontFamily: T.font, fontSize: T.textLabel, fontWeight: 500, color: T.fg }}>Manage columns</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, height: 26, padding: "0 8px", borderRadius: 4, cursor: "pointer", userSelect: "none", color: T.fgMuted, fontFamily: T.font, fontSize: T.textLabel }}>
+                -- 1 line
+              </div>
+            </>
+          )}
+          {activeTab === "Template" && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, height: 26, padding: "0 8px", borderRadius: 4, cursor: "pointer", color: T.fgMuted, fontFamily: T.font, fontSize: T.textLabel }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2"/></svg>
+                Unclassified
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, height: 26, padding: "0 8px", borderRadius: 4, cursor: "pointer", color: T.fgMuted, fontFamily: T.font, fontSize: T.textLabel }}>
+                -- 1 line
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderTop: "none", borderRadius: `0 ${T.radius}px ${T.radius}px ${T.radius}px`, overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {activeTab === "Overview" ? (
+          overviewViz === "table" ? (
+            <OverviewTable rows={tableData} groupBys={groupBys} aggregations={aggregations} />
+          ) : overviewViz === "hbar" ? (
+            <OverviewHBar rows={tableData} groupBys={groupBys} aggregations={aggregations} />
+          ) : overviewViz === "donut" ? (
+            <OverviewDonut rows={tableData} aggregations={aggregations} />
+          ) : overviewViz === "treemap" ? (
+            <OverviewTreemap rows={tableData} aggregations={aggregations} />
+          ) : (
+            <OverviewTable rows={tableData} groupBys={groupBys} aggregations={aggregations} />
+          )
+        ) : activeTab === "Spans" ? (
+          <SpansTableSimple groupBys={groupBys} />
+        ) : activeTab === "Traces" ? (
+          <TracesTable groupBys={groupBys} />
+        ) : activeTab === "Flows" ? (
+          <DependencyMap />
+        ) : activeTab === "Logs" ? (
+          <LogsTable groupBys={groupBys} />
+        ) : activeTab === "Template" ? (
+          <TemplatesTable groupBys={groupBys} />
+        ) : (
+          <TabPlaceholder tab={activeTab} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PresetIconLatency() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5"/></svg>; }
+function PresetIconError() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 6v4M9 12.5h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M7.86 2.5L1.21 14a1 1 0 00.86 1.5h13.32a1 1 0 00.86-1.5L9.54 2.5a1 1 0 00-1.68 0z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>; }
+function PresetIconSlow() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M9 5v4.5l3 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.5 2.5l1.5 1.5M4.5 2.5L3 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
+function PresetIconTraffic() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="10" width="3" height="6" rx="1" fill="currentColor" opacity="0.4"/><rect x="7.5" y="6" width="3" height="10" rx="1" fill="currentColor" opacity="0.6"/><rect x="13" y="2" width="3" height="14" rx="1" fill="currentColor"/></svg>; }
+function PresetIconVolume() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="8" width="3" height="8" rx="1" fill="currentColor"/><rect x="7.5" y="4" width="3" height="12" rx="1" fill="currentColor" opacity="0.7"/><rect x="13" y="2" width="3" height="14" rx="1" fill="currentColor" opacity="0.4"/></svg>; }
+function PresetIconSeverity() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 14h12M3 9h9M3 4h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>; }
+function PresetIconFilter() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5"/><path d="M9 6v3M9 11h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>; }
+function PresetIconSearch() { return <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" strokeWidth="1.5"/><path d="M12 12l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>; }
+
+const SPANS_PRESETS = [
+  { id: "s1", Icon: PresetIconLatency, iconBg: "#216def22", iconColor: "#60a5fa", title: "Service latency overview", desc: "P95 duration by service", groupBys: ["serviceName"], aggs: ["Max"] },
+  { id: "s2", Icon: PresetIconError, iconBg: "#ef444422", iconColor: "#f87171", title: "Error hotspots", desc: "Error count by service and operation", groupBys: ["serviceName", "operationName"], aggs: ["Count"] },
+  { id: "s3", Icon: PresetIconSlow, iconBg: "#f59e0b22", iconColor: "#fbbf24", title: "Slowest operations", desc: "Max duration by operation", groupBys: ["operationName"], aggs: ["Max"] },
+  { id: "s4", Icon: PresetIconTraffic, iconBg: "#2aa96822", iconColor: "#4ade80", title: "Traffic distribution", desc: "Request count by service", groupBys: ["serviceName"], aggs: ["Count"] },
+];
+
+const LOGS_PRESETS = [
+  { id: "l1", Icon: PresetIconVolume, iconBg: "#216def22", iconColor: "#60a5fa", title: "Log volume over time", desc: "Count all logs in the time range", groupBys: [], aggs: ["Count"], focusTab: "Logs" },
+  { id: "l2", Icon: PresetIconSeverity, iconBg: "#f59e0b22", iconColor: "#fbbf24", title: "Logs by severity", desc: "Group logs by severity level", groupBys: ["level"], aggs: ["Count"] },
+  { id: "l3", Icon: PresetIconFilter, iconBg: "#ef444422", iconColor: "#f87171", title: "Error logs only", desc: "Filter to show only error logs", groupBys: ["serviceName"], aggs: ["Count"], filters: [{ value: "Error", type: "include" }] },
+  { id: "l4", Icon: PresetIconSearch, iconBg: "#9949db22", iconColor: "#c084fc", title: "Errors by subsystem", desc: "Error count grouped by subsystem", groupBys: ["subsystem", "level"], aggs: ["Count"] },
+];
+
+function ZeroState({ onSelectPreset, pendingDataType, onSwitchDataType }) {
+  const RECENT_VIEWS = [
+    { name: "Production error spike", time: "2 hours ago" },
+    { name: "Checkout latency P99 > 500ms", time: "Yesterday" },
+    { name: "Auth service errors by region", time: "3 days ago" },
+  ];
+
+  const QUERY_HISTORY = [
+    { query: "source logs | filter severity = 'ERROR' | groupby subsystem", time: "1h ago" },
+    { query: "source spans | filter service = 'checkout' | stats avg(duration)", time: "3h ago" },
+    { query: "source logs | filter message ~ 'timeout' | count", time: "Yesterday" },
+    { query: "source spans | filter status_code = 500 | groupby operation", time: "Yesterday" },
+    { query: "source logs | filter severity IN ('ERROR','CRITICAL')", time: "2 days ago" },
+  ];
+
+  const dataSourceCard = (type, icon, desc, presets) => (
+    <div
+      style={{
+        flex: 1, display: "flex", flexDirection: "column", backgroundColor: T.card,
+        border: `1px solid ${T.border}`,
+        borderRadius: T.radius, overflow: "hidden",
+      }}
+    >
+      <div style={{ padding: "20px 20px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          {icon}
+          <span style={{ fontFamily: T.font, fontSize: 16, fontWeight: 700, color: T.fg }}>{type}</span>
+        </div>
+        <p style={{ fontFamily: T.font, fontSize: 12, color: T.fgMuted, margin: 0, lineHeight: 1.5 }}>{desc}</p>
+      </div>
+      <div style={{ borderTop: `1px solid ${T.border}`, padding: "8px 8px" }}>
+        <div style={{ fontFamily: T.font, fontSize: 10, fontWeight: 600, color: T.fgMuted, textTransform: "uppercase", letterSpacing: "0.5px", padding: "4px 12px 6px" }}>Quick start</div>
+        {presets.map(p => (
+          <div key={p.id} onClick={() => onSelectPreset(type, p)}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", borderRadius: 4, cursor: "pointer", transition: "background-color 80ms" }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: p.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: p.iconColor }}>
+              <p.Icon />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0, minWidth: 0 }}>
+              <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 600, color: T.fg }}>{p.title}</span>
+              <span style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>{p.desc}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const sectionHeader = (text) => (
+    <div style={{ fontFamily: T.font, fontSize: 11, fontWeight: 700, color: T.fgMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>{text}</div>
+  );
+
+  return (
+    <QueryDataProvider key={pendingDataType || "none"} initialDataType={pendingDataType || null} isEmpty onSwitchDataType={onSwitchDataType}
+      onRun={() => {
+        const dt = pendingDataType || "Spans";
+        if (dt === "Logs") {
+          onSelectPreset("Logs", { title: "Logs query", groupBys: ["level"], aggs: ["Count"] });
+        } else {
+          onSelectPreset("Spans", { title: "Spans query", groupBys: ["serviceName"], aggs: ["Count"] });
+        }
+      }}
+    >
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ flexShrink: 0, padding: "16px 16px 0" }}>
+          <QueryBuilder />
+        </div>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ maxWidth: 1100, width: "100%", display: "flex", gap: 32, padding: "24px 32px 40px" }}>
+            {/* Left column - 65% */}
+            <div style={{ flex: 65, minWidth: 0 }}>
+              <h2 style={{ fontFamily: T.font, fontSize: 20, fontWeight: 600, color: T.fg, margin: "0 0 4px" }}>
+                {"What would you like to explore?"}
+              </h2>
+              <p style={{ fontFamily: T.font, fontSize: 12, color: T.fgMuted, margin: "0 0 20px" }}>
+                {pendingDataType ? `Pick a ${pendingDataType.toLowerCase()} template to start your investigation` : "Select a data source to begin, or pick a template to jump right in"}
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                {(!pendingDataType || pendingDataType === "Spans") && dataSourceCard("Spans",
+                  <svg width="22" height="22" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M5 4l-3 3 3 3M9 4l3 3-3 3" stroke="#67e8f9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                  "Distributed traces and span-level data. Investigate latency, errors, and service dependencies.",
+                  SPANS_PRESETS
+                )}
+                {(!pendingDataType || pendingDataType === "Logs") && dataSourceCard("Logs",
+                  <svg width="22" height="22" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="2" rx="1" fill="#a78bfa"/><rect x="2" y="6" width="10" height="2" rx="1" fill="#a78bfa" opacity="0.6"/><rect x="2" y="10" width="7" height="2" rx="1" fill="#a78bfa" opacity="0.3"/></svg>,
+                  "Application and infrastructure logs. Search, filter, and aggregate log events.",
+                  LOGS_PRESETS
+                )}
+              </div>
+            </div>
+
+            {/* Right column - 35% */}
+            <div style={{ flex: 35, minWidth: 0, borderLeft: `1px solid ${T.border}`, paddingLeft: 24 }}>
+              {/* Recent Views */}
+              {sectionHeader("Recent Views")}
+              <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 20 }}>
+                {RECENT_VIEWS.map((v, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 4, cursor: "pointer", transition: "background-color 80ms" }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="1" width="10" height="12" rx="1.5" stroke={T.fgMuted} strokeWidth="1.2"/><path d="M5 4h4M5 7h4M5 10h2" stroke={T.fgMuted} strokeWidth="1" strokeLinecap="round"/></svg>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: T.font, fontSize: 12, fontWeight: 500, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.name}</div>
+                      <div style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>{v.time}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Query History */}
+              {sectionHeader("Query History")}
+              <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 12 }}>
+                {QUERY_HISTORY.map((q, i) => (
+                  <div key={i} className="qh-row" style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 4, cursor: "pointer", transition: "background-color 80ms", position: "relative" }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = T.muted; e.currentTarget.querySelector(".qh-run").style.opacity = "1"; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.querySelector(".qh-run").style.opacity = "0"; }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}><circle cx="7" cy="7" r="5" stroke={T.fgMuted} strokeWidth="1.2"/><path d="M7 4.5V7l2 1" stroke={T.fgMuted} strokeWidth="1.2" strokeLinecap="round"/></svg>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: T.mono, fontSize: 11, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.query}</div>
+                      <div style={{ fontFamily: T.font, fontSize: 10, color: T.fgMuted }}>{q.time}</div>
+                    </div>
+                    <div className="qh-run" style={{ opacity: 0, display: "flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 3, backgroundColor: T.primary, cursor: "pointer", transition: "opacity 120ms", flexShrink: 0 }}>
+                      <Play size={9} fill="#fff" color="#fff" />
+                      <span style={{ fontFamily: T.font, fontSize: 10, fontWeight: 700, color: "#fff" }}>Run</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <span style={{ fontFamily: T.font, fontSize: 11, color: T.primary, cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+                onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
+                View all history
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </QueryDataProvider>
+  );
+}
+
+function PageHeader({ exploreTabs, activeTabId, onSelectTab, onAddTab, onCloseTab }) {
+  return (
+    <div style={{ backgroundColor: T.bg, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+      {/* Title row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px 0" }}>
+        <h1 style={{ fontFamily: T.font, fontSize: 20, fontWeight: 700, color: T.fg, margin: 0 }}>Explore</h1>
+        <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: T.radius, cursor: "pointer", color: T.fgMuted, border: `1px solid ${T.border}` }}>
+            <MoreHorizontal size={14} />
+          </div>
+        </div>
+      </div>
+      {/* Explore tabs (browser-like) */}
+      <div style={{ display: "flex", alignItems: "flex-end", padding: "8px 12px 0", gap: 2 }}>
+        {exploreTabs.map(tab => {
+          const isActive = tab.id === activeTabId;
+          return (
+            <div key={tab.id} onClick={() => onSelectTab(tab.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
+                borderRadius: "6px 6px 0 0", cursor: "pointer", userSelect: "none",
+                backgroundColor: isActive ? T.card : "transparent",
+                borderTop: isActive ? `2px solid ${T.primary}` : "2px solid transparent",
+                borderLeft: isActive ? `1px solid ${T.border}` : "1px solid transparent",
+                borderRight: isActive ? `1px solid ${T.border}` : "1px solid transparent",
+                borderBottom: isActive ? `1px solid ${T.card}` : "1px solid transparent",
+                marginBottom: -1, transition: "background-color 80ms",
+                minWidth: 0,
+              }}
+              onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = T.muted; }}
+              onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = isActive ? T.card : "transparent"; }}
+            >
+              {/* Data type icon */}
+              {tab.dataType === "Spans" ? (
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M5 4l-3 3 3 3M9 4l3 3-3 3" stroke="#67e8f9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              ) : tab.dataType === "Logs" ? (
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="2" rx="1" fill="#a78bfa"/><rect x="2" y="6" width="10" height="2" rx="1" fill="#a78bfa" opacity="0.6"/><rect x="2" y="10" width="7" height="2" rx="1" fill="#a78bfa" opacity="0.3"/></svg>
+              ) : (
+                <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: T.fgMuted, opacity: 0.3 }} />
+              )}
+              <span style={{
+                fontFamily: T.font, fontSize: 12, fontWeight: isActive ? 600 : 400,
+                color: isActive ? T.fg : T.fgMuted,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120,
+              }}>
+                {tab.label}
+              </span>
+              {/* Close button */}
+              {exploreTabs.length > 1 && (
+                <div onClick={e => { e.stopPropagation(); onCloseTab(tab.id); }}
+                  style={{ width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 3, color: T.fgMuted, flexShrink: 0 }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  <X size={10} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {/* Add tab button */}
+        <div onClick={onAddTab}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 28, height: 28, borderRadius: "6px 6px 0 0", cursor: "pointer",
+            color: T.fgMuted, transition: "background-color 80ms",
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = T.muted}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+          <Plus size={14} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+let nextTabId = 2;
+let nextExploreNum = 1;
+function App() {
+  const [exploreTabs, setExploreTabs] = useState([
+    { id: 1, label: "Spans query", dataType: "Spans", isNew: false },
+  ]);
+  const [activeTabId, setActiveTabId] = useState(1);
+
+  const addTab = () => {
+    const id = nextTabId++;
+    const num = nextExploreNum++;
+    setExploreTabs(prev => [...prev, { id, label: `Explore ${num}`, dataType: null, isNew: true }]);
+    setActiveTabId(id);
+  };
+
+  const closeTab = (id) => {
+    setExploreTabs(prev => {
+      const next = prev.filter(t => t.id !== id);
+      if (next.length === 0) return prev;
+      if (activeTabId === id) setActiveTabId(next[next.length - 1].id);
+      return next;
+    });
+  };
+
+  const activatePreset = (tabId, dataType, preset) => {
+    setExploreTabs(prev => prev.map(t =>
+      t.id === tabId ? {
+        ...t,
+        dataType,
+        label: preset ? preset.title : `${dataType} query`,
+        isNew: false,
+        pendingDataType: null,
+        presetGroupBys: preset?.groupBys ?? ["serviceName"],
+        presetAggs: preset?.aggs ?? ["Count"],
+        presetFilters: preset?.filters ?? [],
+        focusTab: preset?.focusTab ?? null,
+      } : t
+    ));
+  };
+
+  const switchDataType = (newDataType) => {
+    setExploreTabs(prev => prev.map(t =>
+      t.id === activeTabId ? { ...t, isNew: true, pendingDataType: newDataType } : t
+    ));
+  };
+
+  const activeTab = exploreTabs.find(t => t.id === activeTabId);
+
+  return (
+    <div style={{ display: "flex", height: "100vh", backgroundColor: T.bg, fontFamily: T.font, color: T.fg, overflow: "hidden" }}>
+      <SideNav />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <PageHeader
+          exploreTabs={exploreTabs}
+          activeTabId={activeTabId}
+          onSelectTab={setActiveTabId}
+          onAddTab={addTab}
+          onCloseTab={closeTab}
+        />
+        {activeTab?.isNew ? (
+          <ZeroState
+            onSelectPreset={(dataType, preset) => activatePreset(activeTabId, dataType, preset)}
+            pendingDataType={activeTab?.pendingDataType ?? null}
+            onSwitchDataType={switchDataType}
+          />
+        ) : (
+          <QueryDataProvider
+            key={activeTabId}
+            initialDataType={activeTab?.dataType ?? "Spans"}
+            initialGroupBys={activeTab?.presetGroupBys}
+            initialAggs={activeTab?.presetAggs}
+            initialFilters={activeTab?.presetFilters}
+            initialFocusTab={activeTab?.focusTab}
+            onSwitchDataType={switchDataType}
+          >
+            <div style={{ flex: 1, overflow: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
+              <div style={{ flexShrink: 0 }}><QueryBuilder /></div>
+              <div style={{ flexShrink: 0 }}><GraphSection /></div>
+              <DrilldownTabs />
+            </div>
+          </QueryDataProvider>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
