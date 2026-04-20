@@ -21,7 +21,7 @@
 
 <script type="text/babel" data-type="module">
 const { useState, useMemo, useCallback, useRef, createContext, useContext } = React;
-const { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } = Recharts;
+const { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip, ReferenceLine } = Recharts;
 
 function ChevronDown({ size = 24, color = "currentColor", style = {}, ...props }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m6 9 6 6 6-6" /></svg>;
@@ -283,6 +283,7 @@ function QueryDataProvider({ children, initialDataType = "Spans", onSwitchDataTy
   const chartBuckets = chartsData[0]?.buckets ?? [];
 
   const [hoveredLabel, setHoveredLabel] = useState(null);
+  const [hoveredBucketIdx, setHoveredBucketIdx] = useState(null);
   const [queryText, setQueryText] = useState("");
   const [queryFilters, setQueryFilters] = useState(() =>
     (initialFilters ?? []).map((f, i) => ({ ...f, id: Date.now() + i }))
@@ -304,7 +305,7 @@ function QueryDataProvider({ children, initialDataType = "Spans", onSwitchDataTy
       groupBys, groupBy, setGroupBy, addGroupBy, removeGroupBy,
       aggregation, aggregations, setAggregation, addAggregation, removeAggregation, ensureMinAggregation,
       tableData: multiAggTableData, chartSeries, chartBuckets, chartsData,
-      hoveredLabel, setHoveredLabel,
+      hoveredLabel, setHoveredLabel, hoveredBucketIdx, setHoveredBucketIdx,
       dataType, setDataType, onSwitchDataType, onRun,
       queryText, setQueryText, queryFilters, addFilter, removeFilter, initialFocusTab,
     }}>
@@ -725,12 +726,38 @@ function ChartContextMenu({ x, y, seriesName, seriesColor, timeLabel, onClose, o
   );
 }
 
-function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = false }) {
+function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = false, panelH = 240 }) {
   const [chartType, setChartType] = useState("stackedbar");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
-  const { hoveredLabel, setHoveredLabel, addFilter } = useQuery();
+  const { hoveredLabel, setHoveredLabel, hoveredBucketIdx, setHoveredBucketIdx, addFilter, dataType, aggregations } = useQuery();
   const [chartMenu, setChartMenu] = useState(null);
+  const isLogs = dataType === "Logs";
+  const isCountOnly = aggregations.length === 0 || (aggregations.length === 1 && aggregations[0] === "Count");
+  const [severityMode, setSeverityMode] = useState(false);
+  const chartH = Math.max(40, panelH - 38);
+  const chartIdRef = useRef(Math.random().toString(36).slice(2, 8));
+  const [localHover, setLocalHover] = useState(false);
+
+  const SEV_COLORS = { Debug: "#9ca3af", Info: "#60a5fa", Warning: "#fbbf24", Error: "#f87171" };
+  const SEVS = ["Debug", "Info", "Warning", "Error"];
+
+  // Generate severity-split data from existing buckets
+  const severityBuckets = useMemo(() => {
+    if (!severityMode) return null;
+    const rand = makeRand(321);
+    return chartBuckets.map(b => {
+      let total = 0;
+      chartSeries.forEach(s => { total += (b[s.key] ?? 0); });
+      return {
+        ...b,
+        _sev_Debug: Math.round(total * (0.42 + rand() * 0.06)),
+        _sev_Info: Math.round(total * (0.33 + rand() * 0.05)),
+        _sev_Warning: Math.round(total * (0.14 + rand() * 0.03)),
+        _sev_Error: Math.round(total * (0.07 + rand() * 0.02)),
+      };
+    });
+  }, [severityMode, chartBuckets, chartSeries]);
 
   const yMax = useMemo(() => {
     let max = 0;
@@ -765,12 +792,36 @@ function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = fa
     return <g transform={`translate(${props.x},${props.y})`}><text x={0} y={0} dy={12} textAnchor="middle" fill={T.fgMuted} fontSize={compact ? 9 : 10} fontFamily={T.font}>{bucket.label}</text></g>;
   };
 
+  const onChartMouseMove = useCallback((state) => {
+    if (state && state.activeTooltipIndex != null) {
+      setLocalHover(true);
+      setHoveredBucketIdx(state.activeTooltipIndex);
+    }
+  }, [setHoveredBucketIdx]);
+
+  const onChartMouseLeave = useCallback(() => {
+    setLocalHover(false);
+    setHoveredLabel(null);
+    setHoveredBucketIdx(null);
+  }, [setHoveredLabel, setHoveredBucketIdx]);
+
+  // Show sync cursor line when another chart is hovered (not this one)
+  const showSyncCursor = !localHover && hoveredBucketIdx != null;
+
   const renderChart = () => {
     const commonXY = { xAxis: { dataKey: "index", interval: 0, tick: xTick, axisLine: false, tickLine: false, tickSize: 0 }, yAxis: { tickFormatter: fmtNum, tick: { fontFamily: T.font, fontSize: compact ? 9 : 10, fill: T.fgMuted }, axisLine: false, tickLine: false, width: compact ? 36 : 44, ticks: yTicks } };
-    if (chartType === "line") return <ResponsiveContainer width="100%" height="100%"><LineChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ stroke: T.fgMuted, strokeDasharray: "3 3" }} />{chartSeries.map(s => <Line key={s.key} type="monotone" dataKey={s.key} stroke={s.color} strokeWidth={hoveredLabel === s.label ? 3 : 1.5} strokeOpacity={seriesOpacity(s.label)} dot={false} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</LineChart></ResponsiveContainer>;
-    if (chartType === "area") return <ResponsiveContainer width="100%" height="100%"><AreaChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ stroke: T.fgMuted, strokeDasharray: "3 3" }} />{chartSeries.map(s => <Area key={s.key} type="monotone" dataKey={s.key} stackId="stack" stroke={s.color} fill={s.color} fillOpacity={seriesOpacity(s.label) * 0.3} strokeOpacity={seriesOpacity(s.label)} strokeWidth={1.5} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</AreaChart></ResponsiveContainer>;
-    if (chartType === "groupedbar") return <ResponsiveContainer width="100%" height="100%"><BarChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="15%" onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ fill: T.muted, opacity: 0.25 }} />{chartSeries.map(s => <Bar key={s.key} dataKey={s.key} fill={s.color} fillOpacity={seriesOpacity(s.label)} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</BarChart></ResponsiveContainer>;
-    return <ResponsiveContainer width="100%" height="100%"><BarChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="2%" onMouseLeave={() => setHoveredLabel(null)}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ fill: T.muted, opacity: 0.25 }} />{chartSeries.map(s => <Bar key={s.key} dataKey={s.key} stackId="stack" fill={s.color} fillOpacity={seriesOpacity(s.label)} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</BarChart></ResponsiveContainer>;
+
+    // Sync cursor reference line - only shown when another chart is hovered
+    const syncLine = showSyncCursor ? <ReferenceLine x={hoveredBucketIdx} stroke={T.fgMuted} strokeDasharray="3 3" strokeOpacity={0.6} /> : null;
+
+    if (severityMode && severityBuckets) {
+      return <ResponsiveContainer width="100%" height={chartH}><BarChart data={severityBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="2%" onMouseMove={onChartMouseMove} onMouseLeave={onChartMouseLeave}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }} formatter={(v, name) => [fmtNum(v), name.replace("_sev_", "")]} labelFormatter={i => severityBuckets[i]?.label || ""} cursor={{ fill: T.muted, opacity: 0.25 }} />{syncLine}{SEVS.map(s => <Bar key={s} dataKey={`_sev_${s}`} name={s} stackId="severity" fill={SEV_COLORS[s]} isAnimationActive={false} />)}</BarChart></ResponsiveContainer>;
+    }
+
+    if (chartType === "line") return <ResponsiveContainer width="100%" height={chartH}><LineChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} onMouseMove={onChartMouseMove} onMouseLeave={onChartMouseLeave}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ stroke: T.fgMuted, strokeDasharray: "3 3" }} />{syncLine}{chartSeries.map(s => <Line key={s.key} type="monotone" dataKey={s.key} stroke={s.color} strokeWidth={hoveredLabel === s.label ? 3 : 1.5} strokeOpacity={seriesOpacity(s.label)} dot={false} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</LineChart></ResponsiveContainer>;
+    if (chartType === "area") return <ResponsiveContainer width="100%" height={chartH}><AreaChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} onMouseMove={onChartMouseMove} onMouseLeave={onChartMouseLeave}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ stroke: T.fgMuted, strokeDasharray: "3 3" }} />{syncLine}{chartSeries.map(s => <Area key={s.key} type="monotone" dataKey={s.key} stackId="stack" stroke={s.color} fill={s.color} fillOpacity={seriesOpacity(s.label) * 0.3} strokeOpacity={seriesOpacity(s.label)} strokeWidth={1.5} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</AreaChart></ResponsiveContainer>;
+    if (chartType === "groupedbar") return <ResponsiveContainer width="100%" height={chartH}><BarChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="15%" onMouseMove={onChartMouseMove} onMouseLeave={onChartMouseLeave}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ fill: T.muted, opacity: 0.25 }} />{syncLine}{chartSeries.map(s => <Bar key={s.key} dataKey={s.key} fill={s.color} fillOpacity={seriesOpacity(s.label)} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</BarChart></ResponsiveContainer>;
+    return <ResponsiveContainer width="100%" height={chartH}><BarChart data={chartBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="2%" onMouseMove={onChartMouseMove} onMouseLeave={onChartMouseLeave}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip content={tooltipRenderer} cursor={{ fill: T.muted, opacity: 0.25 }} />{syncLine}{chartSeries.map(s => <Bar key={s.key} dataKey={s.key} stackId="stack" fill={s.color} fillOpacity={seriesOpacity(s.label)} isAnimationActive={false} onMouseEnter={() => setHoveredLabel(s.label)} />)}</BarChart></ResponsiveContainer>;
   };
 
   const menuItemStyle = { display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", cursor: "pointer", fontFamily: T.font, fontSize: T.textP, color: T.fg, transition: "background-color 80ms" };
@@ -781,6 +832,28 @@ function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = fa
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", height: 36, minHeight: 36, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
         <span style={{ fontFamily: T.font, fontSize: T.textP, fontWeight: 600, color: T.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{aggregationLabel}</span>
         <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
+          {/* Severity toggle - Logs + Count only */}
+          {isLogs && isCountOnly && (
+            <div
+              onClick={() => setSeverityMode(s => !s)}
+              style={{
+                display: "flex", alignItems: "center", gap: 4, height: 22, padding: "0 6px",
+                borderRadius: 4, cursor: "pointer",
+                backgroundColor: severityMode ? "rgba(96,165,250,0.12)" : "transparent",
+                border: `1px solid ${severityMode ? "#60a5fa" : T.border}`,
+                transition: "all 120ms", userSelect: "none",
+              }}
+              title="Color by severity"
+            >
+              <div style={{ display: "flex", gap: 1.5, alignItems: "flex-end", height: 10 }}>
+                <span style={{ width: 2.5, height: 4, borderRadius: 0.5, backgroundColor: severityMode ? SEV_COLORS.Debug : T.fgMuted, transition: "background-color 150ms" }} />
+                <span style={{ width: 2.5, height: 6, borderRadius: 0.5, backgroundColor: severityMode ? SEV_COLORS.Info : T.fgMuted, transition: "background-color 150ms" }} />
+                <span style={{ width: 2.5, height: 8, borderRadius: 0.5, backgroundColor: severityMode ? SEV_COLORS.Warning : T.fgMuted, transition: "background-color 150ms" }} />
+                <span style={{ width: 2.5, height: 10, borderRadius: 0.5, backgroundColor: severityMode ? SEV_COLORS.Error : T.fgMuted, transition: "background-color 150ms" }} />
+              </div>
+              <span style={{ fontFamily: T.font, fontSize: 10, fontWeight: 600, color: severityMode ? "#60a5fa" : T.fgMuted }}>Severity</span>
+            </div>
+          )}
           {/* Active chart type indicator */}
           <div style={{ display: "flex", alignItems: "center", gap: 3, color: T.fgMuted, fontSize: T.textLabel, fontFamily: T.font }}>
             {activeChartType && <activeChartType.Icon />}
@@ -840,7 +913,7 @@ function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = fa
         </div>
       </div>
       {/* Body */}
-      <div style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden", borderRadius: `0 0 ${T.radius}px ${T.radius}px`, position: "relative" }}
+      <div style={{ height: chartH, display: "flex", minHeight: 0, overflow: "hidden", borderRadius: `0 0 ${T.radius}px ${T.radius}px`, position: "relative" }}
         onContextMenu={e => {
           e.preventDefault();
           const rect = e.currentTarget.getBoundingClientRect();
@@ -1194,7 +1267,10 @@ function HybridView({ panelH }) {
   );
 }
 
-function LogsSeverityView({ panelH }) {
+function LogsSeverityChart({ panelH, groupBys }) {
+  const SEV_COLORS = { Debug: "#9ca3af", Info: "#60a5fa", Warning: "#fbbf24", Error: "#f87171" };
+  const SEVS = ["Debug", "Info", "Warning", "Error"];
+
   const data = useMemo(() => {
     const rand = makeRand(888);
     return Array.from({ length: 48 }, (_, i) => {
@@ -1214,14 +1290,13 @@ function LogsSeverityView({ panelH }) {
     });
   }, []);
 
-  const SEV_COLORS = { Debug: "#9ca3af", Info: "#60a5fa", Warning: "#fbbf24", Error: "#f87171" };
-  const SEVS = ["Debug", "Info", "Warning", "Error"];
+  const chartLabel = groupBys.length > 0 ? `Count by ${groupBys.join(", ")} (severity)` : "Log count by severity";
 
   return (
     <div style={{ display: "flex", gap: 0, height: panelH }}>
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: T.radius }}>
         <div style={{ display: "flex", alignItems: "center", padding: "0 10px", height: 30, minHeight: 30, borderBottom: `1px solid ${T.border}` }}>
-          <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.fg }}>Log volume by severity</span>
+          <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.fg }}>{chartLabel}</span>
         </div>
         <div style={{ flex: 1, minHeight: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -1236,7 +1311,11 @@ function LogsSeverityView({ panelH }) {
                 return <g transform={`translate(${props.x},${props.y})`}><text x={0} y={0} dy={10} textAnchor="middle" fill={T.fgMuted} fontSize={9} fontFamily={T.font}>{b.label}</text></g>;
               }} axisLine={false} tickLine={false} tickSize={0} />
               <YAxis tickFormatter={fmtNum} tick={{ fontFamily: T.font, fontSize: 9, fill: T.fgMuted }} axisLine={false} tickLine={false} width={36} />
-              <Tooltip contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }}
+                formatter={(v, name) => [fmtNum(v), name]}
+                labelFormatter={i => data[i]?.label || ""}
+              />
               {SEVS.map(s => <Bar key={s} dataKey={s} stackId="sev" fill={SEV_COLORS[s]} isAnimationActive={false} />)}
             </BarChart>
           </ResponsiveContainer>
@@ -1254,52 +1333,86 @@ function LogsSeverityView({ panelH }) {
   );
 }
 
-function GraphSection() {
+function WorkspaceContent() {
+  const userResizedRef = useRef(false);
+  const scrolledRef = useRef(false);
+
+  useMemo(() => {
+    window._onGraphScroll = (scrollTop) => {
+      if (userResizedRef.current) return;
+      const isScrolled = scrollTop > 20;
+      if (isScrolled !== scrolledRef.current) {
+        scrolledRef.current = isScrolled;
+        if (window._setGraphPanelH) window._setGraphPanelH(isScrolled ? 130 : 240);
+      }
+    };
+    return () => { window._onGraphScroll = null; };
+  }, []);
+
+  const onUserResize = useCallback(() => {
+    userResizedRef.current = true;
+  }, []);
+
+  return (
+    <div style={{ flex: 1, overflow: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
+      <div style={{ flexShrink: 0 }}><QueryBuilder /></div>
+      <div style={{ flexShrink: 0 }}>
+        <GraphSection onUserResize={onUserResize} />
+      </div>
+      <DrilldownTabs />
+    </div>
+  );
+}
+
+function GraphSection({ onUserResize }) {
   const { groupBys, aggregations, dataType } = useQuery();
   const hasQuery = groupBys.length > 0 || aggregations.length > 0;
   const hasCustomAgg = aggregations.some(a => a !== "Count");
   const isLogs = dataType === "Logs";
 
-  // Build modes based on data type
-  const modes = isLogs
-    ? (hasQuery ? ["Logs by severity", "Query result"] : ["Logs by severity"])
-    : (hasQuery ? ["RED metrics", "Hybrid view", "Query result"] : ["RED metrics", "Hybrid view"]);
-
-  const defaultMode = isLogs ? "Logs by severity" : "RED metrics";
-  const [graphMode, setGraphMode] = useState(defaultMode);
+  const modes = isLogs ? [] : (hasQuery ? ["RED metrics", "Hybrid view", "Query result"] : ["RED metrics", "Hybrid view"]);
+  const [graphMode, setGraphMode] = useState(isLogs ? "Query result" : "RED metrics");
   const [collapsed, setCollapsed] = useState(false);
 
-  // Auto-switch to Query result when user adds custom query intent
   useMemo(() => {
-    if (hasQuery && graphMode === defaultMode && modes.includes("Query result")) {
-      setGraphMode("Query result");
-    }
-    // Switch back if query removed
-    if (!hasQuery && graphMode === "Query result") {
-      setGraphMode(defaultMode);
+    if (!isLogs) {
+      if (hasQuery && graphMode === "RED metrics" && hasCustomAgg && modes.includes("Query result")) {
+        setGraphMode("Query result");
+      }
+      if (!hasQuery && graphMode === "Query result") setGraphMode("RED metrics");
     }
   }, [hasQuery, hasCustomAgg]);
 
-  // Reset mode when data type changes
   useMemo(() => {
-    if (isLogs && !modes.includes(graphMode)) setGraphMode("Logs by severity");
-    if (!isLogs && !modes.includes(graphMode)) setGraphMode("RED metrics");
+    if (isLogs) setGraphMode("Query result");
+    if (!isLogs && graphMode === "Query result" && !hasQuery) setGraphMode("RED metrics");
   }, [dataType]);
 
   const [panelH, setPanelH] = useState(240);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef(null);
 
+  // Register global setter for scroll-triggered resize
+  useMemo(() => {
+    window._setGraphPanelH = (h) => setPanelH(h);
+    return () => { window._setGraphPanelH = null; };
+  }, []);
+
   const onHandleDown = useCallback(e => {
     if (collapsed) return;
     e.preventDefault();
+    if (onUserResize) onUserResize();
     dragRef.current = { startY: e.clientY, startH: panelH };
     setDragging(true);
-    const onMove = ev => { if (dragRef.current) setPanelH(Math.max(140, Math.round(dragRef.current.startH + ev.clientY - dragRef.current.startY))); };
+    const onMove = ev => {
+      if (!dragRef.current) return;
+      const h = Math.max(80, Math.round(dragRef.current.startH + ev.clientY - dragRef.current.startY));
+      setPanelH(h);
+    };
     const onUp = () => { dragRef.current = null; setDragging(false); document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
-  }, [panelH, collapsed]);
+  }, [panelH, collapsed, onUserResize]);
 
   const segStyle = (active) => ({
     display: "flex", alignItems: "center", justifyContent: "center",
@@ -1312,38 +1425,38 @@ function GraphSection() {
     transition: "all 120ms",
   });
 
+  const headerLabel = isLogs ? "Query result" : graphMode;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      {/* Section header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0 6px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}
           onClick={() => setCollapsed(c => !c)}>
           <ChevronDown size={12} color={T.fgMuted} style={{ transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 200ms" }} />
           <span style={{ fontFamily: T.font, fontSize: 14, fontWeight: 500, color: T.fg }}>
-            {graphMode}
+            {headerLabel}
           </span>
         </div>
-        {/* Segmented toggle */}
-        <div style={{ display: "flex", backgroundColor: T.muted, borderRadius: 6, padding: 2, gap: 2 }}>
-          {modes.map(mode => (
-            <div key={mode} onClick={() => { setGraphMode(mode); if (collapsed) setCollapsed(false); }} style={segStyle(graphMode === mode)}>
-              {mode}
-            </div>
-          ))}
-        </div>
+        {/* Spans segmented toggle only */}
+        {!isLogs && modes.length > 0 && (
+          <div style={{ display: "flex", backgroundColor: T.muted, borderRadius: 6, padding: 2, gap: 2 }}>
+            {modes.map(mode => (
+              <div key={mode} onClick={() => { setGraphMode(mode); if (collapsed) setCollapsed(false); }} style={segStyle(graphMode === mode)}>
+                {mode}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Content based on mode - hidden when collapsed */}
       {!collapsed && (
         <>
-          {graphMode === "RED metrics" && <REDMetricsView panelH={panelH} />}
-          {graphMode === "Hybrid view" && <HybridView panelH={panelH} />}
-          {graphMode === "Logs by severity" && <LogsSeverityView panelH={panelH} />}
-          {graphMode === "Query result" && <QueryResultsSectionInner panelH={panelH} />}
+          {!isLogs && graphMode === "RED metrics" && <REDMetricsView panelH={panelH} />}
+          {!isLogs && graphMode === "Hybrid view" && <HybridView panelH={panelH} />}
+          {(isLogs || graphMode === "Query result") && <QueryResultsSectionInner panelH={panelH} />}
         </>
       )}
 
-      {/* Resize handle - hidden when collapsed */}
       {!collapsed && (
         <div onMouseDown={onHandleDown} style={{ height: 8, cursor: "ns-resize", display: "flex", alignItems: "center", justifyContent: "center", userSelect: "none" }}>
           <div style={{ width: 36, height: 3, borderRadius: 2, backgroundColor: dragging ? T.fgMuted : T.border, transition: "background-color 150ms" }} />
@@ -1427,6 +1540,7 @@ function QueryResultsSectionInner({ panelH }) {
                     chartBuckets={cd.buckets}
                     aggregationLabel={buildLabel(cd.aggregation)}
                     compact={true}
+                    panelH={panelH}
                   />
                 </div>
               ))}
@@ -1442,6 +1556,7 @@ function QueryResultsSectionInner({ panelH }) {
                   chartBuckets={cd.buckets}
                   aggregationLabel={buildLabel(cd.aggregation)}
                   compact={count > 1}
+                  panelH={panelH}
                 />
               </div>
             ))}
@@ -2684,7 +2799,9 @@ function DrilldownTabs() {
   const tabs = isLogs ? LOGS_TABS : SPANS_TABS;
   const tabCounts = isLogs ? LOGS_TAB_COUNTS : SPANS_TAB_COUNTS;
 
-  const [activeTab, setActiveTab] = useState(initialFocusTab || "Overview");
+  // Use initialFocusTab from preset/switch, fallback to Overview
+  const defaultTab = initialFocusTab || "Overview";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [overviewViz, setOverviewViz] = useState("table");
   const [vizDropdownOpen, setVizDropdownOpen] = useState(false);
 
@@ -2786,7 +2903,9 @@ function DrilldownTabs() {
           )}
         </div>
       </div>
-      <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderTop: "none", borderRadius: `0 ${T.radius}px ${T.radius}px ${T.radius}px`, overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <div onScrollCapture={e => {
+        if (window._onGraphScroll) window._onGraphScroll(e.target.scrollTop);
+      }} style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderTop: "none", borderRadius: `0 ${T.radius}px ${T.radius}px ${T.radius}px`, overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
         {activeTab === "Overview" ? (
           overviewViz === "table" ? (
             <OverviewTable rows={tableData} groupBys={groupBys} aggregations={aggregations} />
@@ -2834,7 +2953,7 @@ const SPANS_PRESETS = [
 ];
 
 const LOGS_PRESETS = [
-  { id: "l1", Icon: PresetIconVolume, iconBg: "#216def22", iconColor: "#60a5fa", title: "Log volume over time", desc: "Count all logs in the time range", groupBys: [], aggs: ["Count"], focusTab: "Logs" },
+  { id: "l1", Icon: PresetIconVolume, iconBg: "#216def22", iconColor: "#60a5fa", title: "Log volume over time", desc: "Count all logs in the time range", groupBys: [], aggs: ["Count"] },
   { id: "l2", Icon: PresetIconSeverity, iconBg: "#f59e0b22", iconColor: "#fbbf24", title: "Logs by severity", desc: "Group logs by severity level", groupBys: ["level"], aggs: ["Count"] },
   { id: "l3", Icon: PresetIconFilter, iconBg: "#ef444422", iconColor: "#f87171", title: "Error logs only", desc: "Filter to show only error logs", groupBys: ["serviceName"], aggs: ["Count"], filters: [{ value: "Error", type: "include" }] },
   { id: "l4", Icon: PresetIconSearch, iconBg: "#9949db22", iconColor: "#c084fc", title: "Errors by subsystem", desc: "Error count grouped by subsystem", groupBys: ["subsystem", "level"], aggs: ["Count"] },
@@ -3093,14 +3212,27 @@ function App() {
         presetGroupBys: preset?.groupBys ?? ["serviceName"],
         presetAggs: preset?.aggs ?? ["Count"],
         presetFilters: preset?.filters ?? [],
-        focusTab: preset?.focusTab ?? null,
+        focusTab: preset?.focusTab ?? "Overview",
       } : t
     ));
   };
 
   const switchDataType = (newDataType) => {
+    const defaults = newDataType === "Logs"
+      ? { groupBys: ["level"], aggs: ["Count"], filters: [], focusTab: "Logs" }
+      : { groupBys: ["serviceName"], aggs: ["Count"], filters: [], focusTab: "Spans" };
     setExploreTabs(prev => prev.map(t =>
-      t.id === activeTabId ? { ...t, isNew: true, pendingDataType: newDataType } : t
+      t.id === activeTabId ? {
+        ...t,
+        dataType: newDataType,
+        label: `${newDataType} query`,
+        isNew: false,
+        pendingDataType: null,
+        presetGroupBys: defaults.groupBys,
+        presetAggs: defaults.aggs,
+        presetFilters: defaults.filters,
+        focusTab: defaults.focusTab,
+      } : t
     ));
   };
 
@@ -3125,7 +3257,7 @@ function App() {
           />
         ) : (
           <QueryDataProvider
-            key={activeTabId}
+            key={`${activeTabId}-${activeTab?.dataType}`}
             initialDataType={activeTab?.dataType ?? "Spans"}
             initialGroupBys={activeTab?.presetGroupBys}
             initialAggs={activeTab?.presetAggs}
@@ -3133,11 +3265,7 @@ function App() {
             initialFocusTab={activeTab?.focusTab}
             onSwitchDataType={switchDataType}
           >
-            <div style={{ flex: 1, overflow: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
-              <div style={{ flexShrink: 0 }}><QueryBuilder /></div>
-              <div style={{ flexShrink: 0 }}><GraphSection /></div>
-              <DrilldownTabs />
-            </div>
+            <WorkspaceContent />
           </QueryDataProvider>
         )}
       </div>
