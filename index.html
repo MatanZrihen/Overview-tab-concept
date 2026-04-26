@@ -1,67 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coralogix Explore V2 Prototype</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Explore V2 — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Inconsolata:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { overflow: hidden; }
-  #root { width: 100vw; height: 100vh; }
+  html, body, #root { height: 100%; margin: 0; padding: 0; background: #09090b; }
+  body { font-family: 'Nunito Sans', sans-serif; color: #e1e4ea; overflow: hidden; }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #18181b; }
+  ::-webkit-scrollbar-thumb { background: #323234; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4a4a4d; }
 </style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+<script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useCallback, useRef, useEffect, createContext, useContext } = React;
+const { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } = Recharts;
 
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-
-<script type="text/babel" data-type="module">
-const { useState, useMemo, useCallback, useRef, createContext, useContext } = React;
-const { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip, ReferenceLine } = Recharts;
-
-function ChevronDown({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m6 9 6 6 6-6" /></svg>;
-}
-function ChevronUp({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m18 15-6-6-6 6" /></svg>;
-}
-function ChevronRight({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="m9 18 6-6-6-6" /></svg>;
-}
-function Maximize2({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>;
-}
-function Search({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>;
-}
-function RotateCw({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>;
-}
-function MoreHorizontal({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>;
-}
-function Play({ size = 24, color = "currentColor", fill = "none", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><polygon points="6 3 20 12 6 21 6 3" /></svg>;
-}
-function Filter({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
-}
-function X({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>;
-}
-function Plus({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M5 12h14" /><path d="M12 5v14" /></svg>;
-}
-function Download({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
-}
-function SlidersHorizontal({ size = 24, color = "currentColor", style = {}, ...props }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} {...props}><line x1="21" y1="4" x2="14" y2="4" /><line x1="10" y1="4" x2="3" y2="4" /><line x1="21" y1="12" x2="12" y2="12" /><line x1="8" y1="12" x2="3" y2="12" /><line x1="21" y1="20" x2="16" y2="20" /><line x1="12" y1="20" x2="3" y2="20" /><line x1="14" y1="2" x2="14" y2="6" /><line x1="8" y1="10" x2="8" y2="14" /><line x1="16" y1="18" x2="16" y2="22" /></svg>;
-}
+// Lucide icon adapter — turn UMD lucide icons into React components matching lucide-react API
+const _lucideIcon = (name) => ({ size = 16, color = "currentColor", strokeWidth = 2, style, ...rest }) => {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = "";
+    const svg = lucide.createElement(lucide.icons[name]);
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+    svg.setAttribute("stroke", color);
+    svg.setAttribute("stroke-width", strokeWidth);
+    ref.current.appendChild(svg);
+  }, [size, color, strokeWidth, name]);
+  return React.createElement("span", { ref, style: { display: "inline-flex", alignItems: "center", justifyContent: "center", lineHeight: 0, ...style }, ...rest });
+};
+const ChevronDown = _lucideIcon("ChevronDown");
+const ChevronUp = _lucideIcon("ChevronUp");
+const ChevronRight = _lucideIcon("ChevronRight");
+const Maximize2 = _lucideIcon("Maximize2");
+const Search = _lucideIcon("Search");
+const RotateCw = _lucideIcon("RotateCw");
+const MoreHorizontal = _lucideIcon("MoreHorizontal");
+const Play = _lucideIcon("Play");
+const Filter = _lucideIcon("Filter");
+const X = _lucideIcon("X");
+const Plus = _lucideIcon("Plus");
+const Download = _lucideIcon("Download");
+const SlidersHorizontal = _lucideIcon("SlidersHorizontal");
 
 
 const T = {
@@ -812,7 +807,7 @@ function SingleChart({ chartSeries, chartBuckets, aggregationLabel, compact = fa
     const commonXY = { xAxis: { dataKey: "index", interval: 0, tick: xTick, axisLine: false, tickLine: false, tickSize: 0 }, yAxis: { tickFormatter: fmtNum, tick: { fontFamily: T.font, fontSize: compact ? 9 : 10, fill: T.fgMuted }, axisLine: false, tickLine: false, width: compact ? 36 : 44, ticks: yTicks } };
 
     // Sync cursor reference line - only shown when another chart is hovered
-    const syncLine = showSyncCursor ? <ReferenceLine x={hoveredBucketIdx} stroke={T.fgMuted} strokeDasharray="3 3" strokeOpacity={0.6} /> : null;
+    const syncLine = null;
 
     if (severityMode && severityBuckets) {
       return <ResponsiveContainer width="100%" height={chartH}><BarChart data={severityBuckets} margin={{ top: 6, right: 4, bottom: 22, left: 0 }} barCategoryGap="2%" onMouseMove={onChartMouseMove} onMouseLeave={onChartMouseLeave}><CartesianGrid vertical={false} stroke="#3a3a4a" strokeOpacity={0.5} /><XAxis {...commonXY.xAxis} /><YAxis {...commonXY.yAxis} /><Tooltip contentStyle={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderRadius: 6, fontFamily: T.font, fontSize: 11, color: T.fg }} formatter={(v, name) => [fmtNum(v), name.replace("_sev_", "")]} labelFormatter={i => severityBuckets[i]?.label || ""} cursor={{ fill: T.muted, opacity: 0.25 }} />{syncLine}{SEVS.map(s => <Bar key={s} dataKey={`_sev_${s}`} name={s} stackId="severity" fill={SEV_COLORS[s]} isAnimationActive={false} />)}</BarChart></ResponsiveContainer>;
@@ -1334,74 +1329,28 @@ function LogsSeverityChart({ panelH, groupBys }) {
 }
 
 function WorkspaceContent() {
-  const userResizedRef = useRef(false);
-  const scrolledRef = useRef(false);
-
-  useMemo(() => {
-    window._onGraphScroll = (scrollTop) => {
-      if (userResizedRef.current) return;
-      const isScrolled = scrollTop > 20;
-      if (isScrolled !== scrolledRef.current) {
-        scrolledRef.current = isScrolled;
-        if (window._setGraphPanelH) window._setGraphPanelH(isScrolled ? 130 : 240);
-      }
-    };
-    return () => { window._onGraphScroll = null; };
-  }, []);
-
-  const onUserResize = useCallback(() => {
-    userResizedRef.current = true;
-  }, []);
-
   return (
     <div style={{ flex: 1, overflow: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 12, minHeight: 0 }}>
       <div style={{ flexShrink: 0 }}><QueryBuilder /></div>
       <div style={{ flexShrink: 0 }}>
-        <GraphSection onUserResize={onUserResize} />
+        <GraphSection />
       </div>
       <DrilldownTabs />
     </div>
   );
 }
 
-function GraphSection({ onUserResize }) {
+function GraphSection() {
   const { groupBys, aggregations, dataType } = useQuery();
-  const hasQuery = groupBys.length > 0 || aggregations.length > 0;
-  const hasCustomAgg = aggregations.some(a => a !== "Count");
   const isLogs = dataType === "Logs";
-
-  const modes = isLogs ? [] : (hasQuery ? ["RED metrics", "Hybrid view", "Query result"] : ["RED metrics", "Hybrid view"]);
-  const [graphMode, setGraphMode] = useState(isLogs ? "Query result" : "RED metrics");
   const [collapsed, setCollapsed] = useState(false);
-
-  useMemo(() => {
-    if (!isLogs) {
-      if (hasQuery && graphMode === "RED metrics" && hasCustomAgg && modes.includes("Query result")) {
-        setGraphMode("Query result");
-      }
-      if (!hasQuery && graphMode === "Query result") setGraphMode("RED metrics");
-    }
-  }, [hasQuery, hasCustomAgg]);
-
-  useMemo(() => {
-    if (isLogs) setGraphMode("Query result");
-    if (!isLogs && graphMode === "Query result" && !hasQuery) setGraphMode("RED metrics");
-  }, [dataType]);
-
   const [panelH, setPanelH] = useState(240);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef(null);
 
-  // Register global setter for scroll-triggered resize
-  useMemo(() => {
-    window._setGraphPanelH = (h) => setPanelH(h);
-    return () => { window._setGraphPanelH = null; };
-  }, []);
-
   const onHandleDown = useCallback(e => {
     if (collapsed) return;
     e.preventDefault();
-    if (onUserResize) onUserResize();
     dragRef.current = { startY: e.clientY, startH: panelH };
     setDragging(true);
     const onMove = ev => {
@@ -1412,20 +1361,7 @@ function GraphSection({ onUserResize }) {
     const onUp = () => { dragRef.current = null; setDragging(false); document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
-  }, [panelH, collapsed, onUserResize]);
-
-  const segStyle = (active) => ({
-    display: "flex", alignItems: "center", justifyContent: "center",
-    height: 20, padding: "0 8px", borderRadius: 4, cursor: "pointer",
-    fontFamily: T.font, fontSize: 12, fontWeight: 700, userSelect: "none",
-    color: active ? T.primary : T.fgMuted,
-    backgroundColor: active ? T.card : "transparent",
-    border: active ? `1px solid ${T.border}` : "1px solid transparent",
-    boxShadow: active ? "0 0 4px rgba(0,0,0,0.12)" : "none",
-    transition: "all 120ms",
-  });
-
-  const headerLabel = isLogs ? "Query result" : graphMode;
+  }, [panelH, collapsed]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
@@ -1434,29 +1370,11 @@ function GraphSection({ onUserResize }) {
           onClick={() => setCollapsed(c => !c)}>
           <ChevronDown size={12} color={T.fgMuted} style={{ transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 200ms" }} />
           <span style={{ fontFamily: T.font, fontSize: 14, fontWeight: 500, color: T.fg }}>
-            {headerLabel}
+            Query result
           </span>
         </div>
-        {/* Spans segmented toggle only */}
-        {!isLogs && modes.length > 0 && (
-          <div style={{ display: "flex", backgroundColor: T.muted, borderRadius: 6, padding: 2, gap: 2 }}>
-            {modes.map(mode => (
-              <div key={mode} onClick={() => { setGraphMode(mode); if (collapsed) setCollapsed(false); }} style={segStyle(graphMode === mode)}>
-                {mode}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-
-      {!collapsed && (
-        <>
-          {!isLogs && graphMode === "RED metrics" && <REDMetricsView panelH={panelH} />}
-          {!isLogs && graphMode === "Hybrid view" && <HybridView panelH={panelH} />}
-          {(isLogs || graphMode === "Query result") && <QueryResultsSectionInner panelH={panelH} />}
-        </>
-      )}
-
+      {!collapsed && <QueryResultsSectionInner panelH={panelH} />}
       {!collapsed && (
         <div onMouseDown={onHandleDown} style={{ height: 8, cursor: "ns-resize", display: "flex", alignItems: "center", justifyContent: "center", userSelect: "none" }}>
           <div style={{ width: 36, height: 3, borderRadius: 2, backgroundColor: dragging ? T.fgMuted : T.border, transition: "background-color 150ms" }} />
@@ -1671,6 +1589,11 @@ function OverviewTable({ rows, groupBys, aggregations }) {
   const { menu, onCellContext, closeMenu, onAction } = useCellMenu();
   const [sortDir, setSortDir] = useState("desc");
   const [sortAgg, setSortAgg] = useState(aggregations[0]);
+  const aggLabelsOT = { Count: "count", "Count Distinct": "count distinct", Sum: "sum (bytes)", Min: "min", Max: "max" };
+  if (groupBys.length === 0) {
+    const total = rows.reduce((s, r) => s + r.value, 0);
+    return (<div style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}><div style={{ flex: 1, overflowY: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.font, fontSize: T.textP }}><thead><tr style={{ borderBottom: `1px solid ${T.border}`, backgroundColor: T.muted }}>{aggregations.map(a => <th key={a} style={{ padding: "8px 12px", textAlign: "left", color: T.fgMuted, fontWeight: 600, fontSize: T.textLabel, backgroundColor: T.muted, position: "sticky", top: 0, zIndex: 1 }}>{aggLabelsOT[a] || a}</th>)}</tr></thead><tbody><tr style={{ borderBottom: `1px solid ${T.border}` }}>{aggregations.map((a, i) => <td key={a} style={{ padding: "7px 12px", fontFamily: T.mono, fontSize: T.textP, color: T.fg, fontWeight: 600 }}>{fmtNum(i === 0 ? total : Math.round(total * (0.3 + i * 0.2)))}</td>)}</tr></tbody></table></div><div style={{ padding: "6px 12px", borderTop: `1px solid ${T.border}`, fontFamily: T.font, fontSize: T.textLabel, color: T.fgMuted }}>1 result</div></div>);
+  }
   const sorted = useMemo(() => {
     if (!sortDir) return rows;
     return [...rows].sort((a, b) => {
@@ -2549,8 +2472,8 @@ function OverviewTreemap({ rows, aggregations }) {
   );
 }
 
-const SPANS_TABS = ["Overview", "Spans", "Traces", "Flows"];
-const SPANS_TAB_COUNTS = { Overview: null, Spans: "38.91M", Traces: "1.2M", Flows: "847" };
+const SPANS_TABS = ["Overview", "Spans", "Traces", "Flows", "RED metrics", "Hybrid view"];
+const SPANS_TAB_COUNTS = { Overview: null, Spans: "38.91M", Traces: "1.2M", Flows: "847", "RED metrics": null, "Hybrid view": null };
 const LOGS_TABS = ["Overview", "Logs", "Template"];
 const LOGS_TAB_COUNTS = { Overview: null, Logs: "36.97M", Template: "986" };
 
@@ -2799,11 +2722,15 @@ function DrilldownTabs() {
   const tabs = isLogs ? LOGS_TABS : SPANS_TABS;
   const tabCounts = isLogs ? LOGS_TAB_COUNTS : SPANS_TAB_COUNTS;
 
-  // Use initialFocusTab from preset/switch, fallback to Overview
-  const defaultTab = initialFocusTab || "Overview";
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const hasQuery = groupBys.length > 0 || aggregations.length > 0;
+  const defaultTab = initialFocusTab || (hasQuery ? "Overview" : (isLogs ? "Logs" : "Spans"));
+  const [selectedTab, setSelectedTab] = useState(defaultTab);
   const [overviewViz, setOverviewViz] = useState("table");
   const [vizDropdownOpen, setVizDropdownOpen] = useState(false);
+
+  // Derive the actual active tab: if query is empty and user is on Overview, redirect to raw tab
+  const activeTab = (!hasQuery && selectedTab === "Overview") ? (isLogs ? "Logs" : "Spans") : selectedTab;
+  const setActiveTab = setSelectedTab;
 
   const activeVizType = OVERVIEW_VIZ_TYPES.find(v => v.id === overviewViz);
 
@@ -2903,10 +2830,19 @@ function DrilldownTabs() {
           )}
         </div>
       </div>
-      <div onScrollCapture={e => {
-        if (window._onGraphScroll) window._onGraphScroll(e.target.scrollTop);
-      }} style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderTop: "none", borderRadius: `0 ${T.radius}px ${T.radius}px ${T.radius}px`, overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        {activeTab === "Overview" ? (
+      <div style={{ backgroundColor: T.card, border: `1px solid ${T.border}`, borderTop: "none", borderRadius: `0 ${T.radius}px ${T.radius}px ${T.radius}px`, overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {activeTab === "RED metrics" ? (
+          <div style={{ flex: 1, padding: 12 }}><REDMetricsView panelH={400} /></div>
+        ) : activeTab === "Hybrid view" ? (
+          <div style={{ flex: 1, padding: 12 }}><HybridView panelH={400} /></div>
+        ) : activeTab === "Overview" ? (
+          !(groupBys.length > 0 || aggregations.length > 0) ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: 40 }}>
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="8" width="32" height="24" rx="3" stroke={T.fgMuted} strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4" /><path d="M12 22l5-6 4 4 7-8" stroke={T.fgMuted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.3" /></svg>
+              <span style={{ fontFamily: T.font, fontSize: 14, fontWeight: 600, color: T.fgMuted }}>No query configured</span>
+              <span style={{ fontFamily: T.font, fontSize: 12, color: T.fgMuted, opacity: 0.7, textAlign: "center", maxWidth: 280 }}>Add a group-by or aggregation to see results in the Overview tab</span>
+            </div>
+          ) :
           overviewViz === "table" ? (
             <OverviewTable rows={tableData} groupBys={groupBys} aggregations={aggregations} />
           ) : overviewViz === "hbar" ? (
@@ -3272,9 +3208,8 @@ function App() {
     </div>
   );
 }
-
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
 </script>
 </body>
 </html>
